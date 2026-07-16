@@ -6,12 +6,14 @@ import cookieParser from 'cookie-parser';
 import { getCurrentUser } from './controllers/user.controller.js';
 import protect from './middleware/auth.middleware.js';
 import { proxyWithHeader } from './utils/proxyWithHeader.js';
+import morgan from 'morgan';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+app.use(morgan('dev'));
 app.use(
     cors({
         origin: process.env.FRONTEND_URL,
@@ -24,7 +26,6 @@ app.use(
     '/api/auth',
     proxy(process.env.AUTH_SERVICE, {
         proxyReqPathResolver: (req) => {
-            console.log('Proxying to:', req.originalUrl);
             return req.originalUrl;
         },
     })

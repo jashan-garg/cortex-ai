@@ -1,5 +1,5 @@
 const MessageList = () => {
-    return <div>MessageList</div>;
+    return <div className="">MessageList</div>;
 };
 
 export default MessageList;
