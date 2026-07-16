@@ -4,7 +4,7 @@ import api from '../../utils/axios.js';
 import { FcGoogle } from 'react-icons/fc';
 import { useDispatch, useSelector } from 'react-redux';
 import { setUserdata } from '../redux/userSlice.js';
-import SideBar from '../components/Sidebar.jsx';
+import SideBar from '../components/SideBar.jsx';
 import ChatArea from '../components/ChatArea.jsx';
 import Artifact from '../components/Artifact.jsx';
 
