@@ -9,9 +9,15 @@ import { getMemory } from '../config/memory.js';
 export const chatAgent = async (state) => {
     const llm = await getModel('chat');
     const history = (await getMemory(state.conversationId)) || [];
+    const searchContext = state.searchResults
+        ? `Web search results: ${JSON.stringify(state.searchResults)} Answer the user using only the above search results.`
+        : ``;
 
     const systemPrompt = `
         You are Cortex AI, an intellegent AI assistant, made by Jashan Garg.
+
+        ${searchContext}
+
         If searchContext exists:
         - Use search results to answer.
         - Do not mention internal tools.

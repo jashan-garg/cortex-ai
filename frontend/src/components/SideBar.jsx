@@ -51,7 +51,7 @@ const SideBar = () => {
 
     if (collapsed)
         return (
-            <div className="hidden lg:flex flex-col items-center w-14 h-screen bg-[#0d0f14] py-3 gap-1 shrink-0">
+            <div className="hidden lg:flex flex-col items-center w-14 h-[calc(100vh-16px)] m-2 bg-[#111111]/90 backdrop-blur-xl rounded-2xl border border-white/5 py-3 gap-1 shrink-0">
                 <button
                     className="flex items-center justify-center w-9 h-9 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-white/8 transition-colors duration-150 bg-transparent border-none cursor-pointer"
                     onClick={() => setCollapsed(false)}
@@ -110,8 +110,8 @@ const SideBar = () => {
         );
 
     return (
-        <div className="fixed lg:static inset-y-0 left-0 z-50 w-64 h-screen shrink-0 bg-[#0d0f14] transition-transform duration-250">
-            <div className="flex flex-col h-full">
+        <div className="fixed lg:static z-50 h-[calc(100vh-16px)] w-64 m-2 bg-[#111111]/90 backdrop-blur-xl rounded-2xl shrink-0 border border-white/5 transition-transform duration-250">
+            <div className="flex flex-col h-full p-1">
                 {/* Header */}
                 <div className="flex items-center justify-between px-3 py-3">
                     <span className="text-[14px] font-semibold text-slate-200 tracking-tight px-1">

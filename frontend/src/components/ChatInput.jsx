@@ -25,12 +25,15 @@ import { updateConversation } from '../features/updateConversation.js';
 const ChatInput = () => {
     const [value, setValue] = useState('');
     const [selectedAgent, setSelectedAgent] = useState('Auto');
+    const [isFocused, setIsFocused] = useState(false);
+
     const { selectedConversation } = useSelector((state) => state.conversation);
     const dispatch = useDispatch();
 
     const handleSendMessage = async () => {
         const prompt = value.trim();
         if (!prompt) return;
+
         let conversation = selectedConversation;
 
         if (!conversation) {
@@ -40,7 +43,7 @@ const ChatInput = () => {
             dispatch(addConversation(conversation));
         }
 
-        if (conversation?.title == 'New Chat') {
+        if (conversation?.title === 'New Chat') {
             await updateConversation({
                 id: conversation._id,
                 title: prompt,
@@ -61,6 +64,7 @@ const ChatInput = () => {
 
         dispatch(addMessage({ role: 'user', content: prompt }));
         setValue('');
+
         const data = await sendMessage(payload);
         dispatch(addMessage({ role: 'assistant', content: data }));
     };
@@ -76,75 +80,110 @@ const ChatInput = () => {
     ];
 
     return (
-        <div className="w-full px-3 md:px-5 pb-5 pt-2 bg-[#0d0f14]">
-            <div className="max-w-3xl mx-auto">
-                <div className="flex flex-col gap-2.5 bg-white/6 rounded-[26px] px-3.5 pt-3 pb-2.5 shadow-[0_2px_16px_rgba(0,0,0,0.25)]">
-                    <textarea
-                        placeholder="Ask anything"
-                        className="w-full bg-transparent outline-none resize-none text-[15px] text-slate-100 placeholder:text-slate-500 leading-relaxed scrollbar-none [&::-webkit-scrollbar]:hidden disabled:opacity-50 px-1"
-                        rows={2}
-                        onChange={(e) => setValue(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendMessage();
-                            }
-                        }}
-                        value={value}
-                    />
+        <div className="fixed bottom-0 -left-32 right-0">
+            {/* GRADIENT FADE (KEY PART) */}
+            <div className="absolute -top-7.5 left-0 w-full h-7.5 bg-linear-to-b from-transparent to-[#0a0a0a] pointer-events-none" />
 
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
-                            <button className="flex items-center justify-center w-8 h-8 shrink-0 rounded-full text-slate-400 hover:text-slate-100 hover:bg-white/10 border-none transition-colors duration-150 bg-transparent cursor-pointer">
-                                <Paperclip size={17} />
-                            </button>
+            <div className="px-4 pb-6 pt-3 bg-[#0a0a0a]">
+                <div className="max-w-3xl mx-auto">
+                    {/* Input container (solid, no glass) */}
+                    <div
+                        className={`flex flex-col gap-2.5 rounded-2xl px-4 pt-3 pb-2.5
+                        bg-[#111111]
+                        border border-white/6
+                        transition-all duration-200
+                        ${
+                            isFocused
+                                ? 'border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]'
+                                : ''
+                        }`}
+                    >
+                        {/* Textarea */}
+                        <textarea
+                            placeholder="Ask anything"
+                            rows={2}
+                            value={value}
+                            onChange={(e) => setValue(e.target.value)}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                }
+                            }}
+                            className="w-full bg-transparent outline-none resize-none 
+                            text-[15px] text-neutral-200 
+                            placeholder:text-neutral-500 
+                            leading-relaxed px-1
+                            scrollbar-none [&::-webkit-scrollbar]:hidden"
+                        />
 
-                            <div className="w-px h-5 bg-white/10 mx-0.5 shrink-0" />
+                        {/* Bottom bar */}
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+                                <button
+                                    className="w-8 h-8 flex items-center justify-center 
+                                    rounded-full text-neutral-400 
+                                    hover:text-white hover:bg-white/5 transition"
+                                >
+                                    <Paperclip size={16} />
+                                </button>
 
-                            {agents.map((agent) => {
-                                const isActive = selectedAgent === agent.label;
-                                const Icon = agent.icon;
-                                return (
-                                    <button
-                                        key={agent.id}
-                                        onClick={() =>
-                                            setSelectedAgent(agent.label)
-                                        }
-                                        className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12.5px] font-medium border-none cursor-pointer transition-colors duration-150 ${
-                                            isActive
-                                                ? 'bg-white/12 text-slate-100'
-                                                : 'bg-transparent text-slate-400 hover:bg-white/8 hover:text-slate-200'
-                                        }`}
-                                    >
-                                        <Icon size={13.5} />
-                                        {agent.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
+                                <div className="w-px h-5 bg-white/8 mx-1" />
 
-                        <div className="flex items-center gap-1 shrink-0">
-                            <button className="flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-slate-100 hover:bg-white/10 border-none transition-colors duration-150 bg-transparent cursor-pointer">
-                                <Mic size={17} />
-                            </button>
-                            <button
-                                disabled={!value.trim()}
-                                onClick={handleSendMessage}
-                                className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors duration-150 border-none cursor-pointer ${
-                                    value.trim()
-                                        ? 'bg-white text-black hover:bg-slate-200'
-                                        : 'bg-white/15 text-white/40 cursor-not-allowed'
-                                }`}
-                            >
-                                <ArrowUp size={17} strokeWidth={2.5} />
-                            </button>
+                                {agents.map((agent) => {
+                                    const isActive =
+                                        selectedAgent === agent.label;
+                                    const Icon = agent.icon;
+
+                                    return (
+                                        <button
+                                            key={agent.id}
+                                            onClick={() =>
+                                                setSelectedAgent(agent.label)
+                                            }
+                                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12px] transition ${
+                                                isActive
+                                                    ? 'bg-white/10 text-white'
+                                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+                                            }`}
+                                        >
+                                            <Icon size={13} />
+                                            {agent.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                                <button
+                                    className="w-8 h-8 flex items-center justify-center 
+                                    rounded-full text-neutral-400 
+                                    hover:text-white hover:bg-white/5 transition"
+                                >
+                                    <Mic size={16} />
+                                </button>
+
+                                <button
+                                    disabled={!value.trim()}
+                                    onClick={handleSendMessage}
+                                    className={`w-8 h-8 flex items-center justify-center rounded-full transition ${
+                                        value.trim()
+                                            ? 'bg-white text-black hover:bg-neutral-200'
+                                            : 'bg-white/8 text-white/30 cursor-not-allowed'
+                                    }`}
+                                >
+                                    <ArrowUp size={16} strokeWidth={2.5} />
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <p className="text-center text-[11px] text-slate-600 mt-2">
-                    Cortex AI can make mistakes. Check important info.
-                </p>
+                    <p className="text-center text-[11px] text-neutral-600 mt-2">
+                        Cortex AI can make mistakes. Check important info.
+                    </p>
+                </div>
             </div>
         </div>
     );

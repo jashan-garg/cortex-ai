@@ -32,7 +32,7 @@ const Home = () => {
     };
 
     return (
-        <div className="h-screen flex bg-[#0d0f14] text-white overflow-hidden">
+        <div className="h-screen flex text-white overflow-hidden bg-linear-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#050505]">
             <SideBar />
             <ChatArea />
             <Artifact />
@@ -40,7 +40,6 @@ const Home = () => {
             {!user && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                     <div className="w-85 bg-[#1a1a1a] border border-white/10 rounded-2xl p-7 flex flex-col gap-5">
-                        {/* Heading */}
                         <div className="flex flex-col gap-1">
                             <h2 className="text-[17px] font-semibold text-neutral-200 tracking-tight">
                                 Welcome to Cortex AI
@@ -50,7 +49,6 @@ const Home = () => {
                             </p>
                         </div>
 
-                        {/* ChatGPT-style button */}
                         <button
                             onClick={googleLogin}
                             className="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg text-sm font-medium 
