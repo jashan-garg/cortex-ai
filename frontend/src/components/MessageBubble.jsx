@@ -33,9 +33,7 @@ const MessageBubble = ({ role, content }) => {
     return (
         <div className="w-full py-3">
             <div
-                className={`max-w-3xl mx-auto px-3 md:px-4 flex flex-col ${
-                    isUser ? 'items-end' : 'items-start'
-                }`}
+                className={`max-w-3xl mx-auto px-3 md:px-4 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
             >
                 <div className={`min-w-0 ${isUser ? 'max-w-[75%]' : 'w-full'}`}>
                     <div
@@ -43,10 +41,7 @@ const MessageBubble = ({ role, content }) => {
                         className={`overflow-hidden wrap-break-word text-[15px] leading-7 ${
                             isUser
                                 ? 'bg-white/10 text-slate-100 rounded-3xl px-4 py-2.5 whitespace-pre-wrap'
-                                : 'bg-[#2f2f2f] text-slate-100 rounded-2xl px-4 py-3 border border-white/5'
-                        } ${
-                            !isUser &&
-                            '[&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:my-2 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:my-2 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:my-1 [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1.5 [&_a]:text-indigo-400 [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-2 [&_blockquote]:border-white/20 [&_blockquote]:pl-3 [&_blockquote]:text-slate-400 [&_blockquote]:my-2 [&_code]:bg-white/10 [&_code]:text-[13px] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_pre]:bg-black/40 [&_pre]:border [&_pre]:border-white/7 [&_pre]:rounded-xl [&_pre]:p-3.5 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse [&_th]:border [&_th]:border-white/10 [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-left [&_td]:border [&_td]:border-white/10 [&_td]:px-2.5 [&_td]:py-1.5'
+                                : 'text-slate-100 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:my-2 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:my-2 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:my-1 [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1.5 [&_a]:text-indigo-400 [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-2 [&_blockquote]:border-white/20 [&_blockquote]:pl-3 [&_blockquote]:text-slate-400 [&_blockquote]:my-2 [&_code]:bg-white/10 [&_code]:text-[13px] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_pre]:bg-black/40 [&_pre]:border [&_pre]:border-white/7 [&_pre]:rounded-xl [&_pre]:p-3.5 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse [&_th]:border [&_th]:border-white/10 [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-left [&_td]:border [&_td]:border-white/10 [&_td]:px-2.5 [&_td]:py-1.5'
                         }`}
                         style={{
                             maxHeight: expanded
