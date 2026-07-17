@@ -4,7 +4,6 @@ import Message from '../models/message.model.js';
 export const createConversation = async (req, res) => {
     try {
         const userId = req.headers['x-user-id'];
-        console.log(`User ID: ${userId}`);
         const conversation = await Conversation.create({ userId: userId });
         return res.status(200).json(conversation);
     } catch (error) {
@@ -17,7 +16,6 @@ export const createConversation = async (req, res) => {
 export const getConversations = async (req, res) => {
     try {
         const userId = req.headers['x-user-id'];
-        console.log(`User ID: ${userId}`);
         const conversations = await Conversation.find({ userId: userId }).sort({
             updatedAt: -1,
         });
