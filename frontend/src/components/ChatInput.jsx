@@ -1,8 +1,13 @@
 import { Mic, Paperclip, Send } from 'lucide-react';
 import { useState } from 'react';
 import sendMessage from '../features/sendMessage.js';
+import { createConversation } from '../features/createConversation.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { addMessage } from '../redux/messageSlice.js';
+import {
+    addConversation,
+    setSelectedConversation,
+} from '../redux/conversationSlice.js';
 
 const ChatInput = () => {
     const [value, setValue] = useState('');
@@ -10,11 +15,23 @@ const ChatInput = () => {
     const dispatch = useDispatch();
 
     const handleSendMessage = async () => {
+        const prompt = value.trim();
+        if (!prompt) return;
+        let conversation = selectedConversation;
+
+        if (!conversation) {
+            conversation = await createConversation();
+            if (!conversation) return;
+            dispatch(addConversation(conversation));
+            dispatch(setSelectedConversation(conversation));
+        }
+
         const payload = {
-            prompt: value.trim(),
-            conversationId: selectedConversation?._id,
+            prompt,
+            conversationId: conversation._id,
         };
-        dispatch(addMessage({ role: 'user', content: value.trim() }));
+
+        dispatch(addMessage({ role: 'user', content: prompt }));
         setValue('');
         const data = await sendMessage(payload);
         dispatch(addMessage({ role: 'assistant', content: data }));
@@ -28,6 +45,12 @@ const ChatInput = () => {
                     className="w-full bg-transparent outline-none resize-none text-[14px] text-slate-200 placeholder:text-slate-600 leading-relaxed scrollbar-none [&::-webkit-scrollbar]:hidden disabled:opacity-50"
                     rows={3}
                     onChange={(e) => setValue(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                        }
+                    }}
                     value={value.trimStart()}
                 />
                 <div className="flex items-center justify-between">
