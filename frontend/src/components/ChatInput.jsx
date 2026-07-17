@@ -78,7 +78,7 @@ const ChatInput = () => {
     return (
         <div className="w-full px-3 md:px-5 pb-5 pt-2 bg-[#0d0f14]">
             <div className="max-w-3xl mx-auto">
-                <div className="flex flex-col gap-2.5 bg-white/[0.06] rounded-[26px] px-3.5 pt-3 pb-2.5 shadow-[0_2px_16px_rgba(0,0,0,0.25)]">
+                <div className="flex flex-col gap-2.5 bg-white/6 rounded-[26px] px-3.5 pt-3 pb-2.5 shadow-[0_2px_16px_rgba(0,0,0,0.25)]">
                     <textarea
                         placeholder="Ask anything"
                         className="w-full bg-transparent outline-none resize-none text-[15px] text-slate-100 placeholder:text-slate-500 leading-relaxed scrollbar-none [&::-webkit-scrollbar]:hidden disabled:opacity-50 px-1"
