@@ -44,8 +44,10 @@ const SideBar = () => {
 
     const handleCreateConversation = async () => {
         const data = await createConversation();
-        console.log(`new convo`);
-        dispatch(addConversation(data));
+        if (data) {
+            dispatch(addConversation(data));
+            dispatch(setSelectedConversation(data));
+        }
     };
 
     if (collapsed)
