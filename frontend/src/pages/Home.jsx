@@ -11,6 +11,7 @@ import Artifact from '../components/Artifact.jsx';
 const Home = () => {
     const { user } = useSelector((state) => state.user);
     const dispatch = useDispatch();
+
     const googleLogin = async () => {
         try {
             const data = await signInWithPopup(auth, googleProvider);
@@ -24,7 +25,6 @@ const Home = () => {
     const handleLogin = async (token) => {
         try {
             const { data } = await api.post('/api/auth/login', { token });
-            console.log(data);
             dispatch(setUserdata(data));
         } catch (error) {
             console.log(error);
@@ -39,19 +39,24 @@ const Home = () => {
 
             {!user && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="w-85 bg-[#13151c] border border-white/8 rounded-2xl p-7 flex flex-col gap-5">
+                    <div className="w-85 bg-[#1a1a1a] border border-white/10 rounded-2xl p-7 flex flex-col gap-5">
+                        {/* Heading */}
                         <div className="flex flex-col gap-1">
-                            <h2 className="text-[17px] font-semibold text-slate-100 tracking-tight">
-                                Welcome to cortex AI
+                            <h2 className="text-[17px] font-semibold text-neutral-200 tracking-tight">
+                                Welcome to Cortex AI
                             </h2>
-                            <p className="text-[13px] text-slate-500">
+                            <p className="text-[13px] text-neutral-500">
                                 Please login to continue using the app
                             </p>
                         </div>
 
+                        {/* ChatGPT-style button */}
                         <button
                             onClick={googleLogin}
-                            className="w-full flex items-center justify-center gap-3 py-2.5 rounded-xl text-sm font-medium bg-linear-to-br from-indigo-700 to-violet-900 hover:from-indigo-700 hover:to-violet-900 active:from-indigo-700 active:to-violet900 border border-indigo-500/30 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all duration-150 cursor-pointer"
+                            className="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg text-sm font-medium 
+                            bg-[#2b2b2b] hover:bg-[#343434] active:bg-[#2f2f2f] 
+                            text-neutral-200 
+                            transition-colors duration-150 cursor-pointer"
                         >
                             <FcGoogle size={18} />
                             <span>Continue with Google</span>

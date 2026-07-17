@@ -4,7 +4,7 @@ import {
     MessageSquare,
     PanelLeftIcon,
     PanelRight,
-    Search,
+    // Search,
     SquarePen,
     User,
 } from 'lucide-react';
@@ -12,11 +12,11 @@ import { useEffect, useState } from 'react';
 import { getConversations } from '../features/getConversations.js';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    addConversation,
+    // addConversation,
     setConversations,
     setSelectedConversation,
 } from '../redux/conversationSlice.js';
-import { createConversation } from '../features/createConversation.js';
+// import { createConversation } from '../features/createConversation.js';
 import logout from '../features/logout.js';
 import { setUserdata } from '../redux/userSlice.js';
 
@@ -41,13 +41,13 @@ const SideBar = () => {
         getConv();
     }, [user?._id]);
 
-    const handleCreateConversation = async () => {
-        const data = await createConversation();
-        if (data) {
-            dispatch(addConversation(data));
-            dispatch(setSelectedConversation(data));
-        }
-    };
+    // const handleCreateConversation = async () => {
+    //     const data = await createConversation();
+    //     if (data) {
+    //         dispatch(addConversation(data));
+    //         dispatch(setSelectedConversation(data));
+    //     }
+    // };
 
     if (collapsed)
         return (
@@ -61,7 +61,9 @@ const SideBar = () => {
 
                 <button
                     className="flex items-center justify-center w-9 h-9 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-white/8 transition-colors duration-150 bg-transparent border-none cursor-pointer mt-1"
-                    onClick={handleCreateConversation}
+                    onClick={() => {
+                        dispatch(setSelectedConversation(null));
+                    }}
                 >
                     <SquarePen size={17} />
                 </button>
@@ -127,15 +129,17 @@ const SideBar = () => {
                 <div className="px-2 flex flex-col gap-0.5">
                     <button
                         className="w-full flex items-center gap-2.5 text-[13.5px] font-medium text-slate-200 rounded-lg px-2.5 py-2 border-none bg-transparent cursor-pointer hover:bg-white/8 transition-colors duration-150"
-                        onClick={handleCreateConversation}
+                        onClick={() => {
+                            dispatch(setSelectedConversation(null));
+                        }}
                     >
                         <SquarePen size={16} className="text-slate-400" />
                         New chat
                     </button>
-                    <button className="w-full flex items-center gap-2.5 text-[13.5px] font-medium text-slate-200 rounded-lg px-2.5 py-2 border-none bg-transparent cursor-pointer hover:bg-white/8 transition-colors duration-150">
+                    {/* <button className="w-full flex items-center gap-2.5 text-[13.5px] font-medium text-slate-200 rounded-lg px-2.5 py-2 border-none bg-transparent cursor-pointer hover:bg-white/8 transition-colors duration-150">
                         <Search size={16} className="text-slate-400" />
                         Search chats
-                    </button>
+                    </button> */}
                 </div>
 
                 {/* convo list */}
