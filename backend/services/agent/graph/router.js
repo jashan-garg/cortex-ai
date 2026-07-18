@@ -1,65 +1,77 @@
 import { getModel } from '../config/llmModels.js';
 
 export const router = async (state) => {
-    if (state.agent && state.agent != 'auto')
-        return {
-            ...state,
-            agent: state.agent,
-        };
+  if (state.agent && state.agent != 'auto')
+    return {
+      ...state,
+      agent: state.agent,
+    };
 
-    const llm = await getModel('router');
-    const prompt = `You are an agent router. 
-    Available agents: 
-    - chat 
-    - search 
-    - coding 
-    - pdf 
-    - ppt 
-    - vision.
+  const llm = await getModel('router');
+  const prompt = `You are an agent router. Classify the user query into exactly ONE agent.
 
-    Rules: chat:
-    General conversation,
-    explanations,
-    learning,
-    questions.
+Available agents:
+- chat
+- search
+- coding
+- pdf
+- ppt
+- vision
+- datetime
 
-    search:
-    Current events,
-    latest information,
-    news,
-    recent developments,
-    internet lookup.
+Definitions:
 
-    coding:
-    Generate code,
-    debug code,
-    build projects,
-    architecture,
-    API design.
+chat:
+General conversation, greetings, small talk, opinions, explanations,
+learning, jokes, or any question you can answer from general knowledge
+without needing live/current data.
 
-    pdf:
-    Questions about generate PDFs
-    or document context.
+search:
+Queries that need CURRENT, real-time, or recent information from the internet —
+news, live prices, scores, recent events, "latest" anything, product recommendations,
+or facts that change over time and you cannot know reliably.
+Do NOT use search for greetings, small talk, or date/time questions — those have
+dedicated agents.
 
-    ppt:
-    Questions about generate ppts
-    or ppt context.
+coding:
+Generate code, debug code, build projects, architecture, API design.
 
-    vision:
-    Questions about generating images
-    or image editing.
+pdf:
+Generating PDFs or questions about PDF document context.
 
-    Return ONLY one word:
+ppt:
+Generating PPTs or questions about ppt context.
 
-    chat
-    search
-    coding
-    pdf
-    ppt
-    vision
+vision:
+Generating images or editing images.
 
-    User Query: ${state.prompt} `;
+datetime:
+Any question asking for the current date, day, or time (e.g. "what time is it",
+"what's the date today", "time rn"). These must NEVER go to search or chat,
+since only this agent can return an accurate live value.
 
-    const response = await llm.invoke(prompt);
-    return { ...state, agent: response.content.trim().toLowerCase() };
+Examples:
+Query: "hi" -> chat
+Query: "hello there" -> chat
+Query: "what time is it right now" -> datetime
+Query: "what's today's date" -> datetime
+Query: "what's the time in India" -> datetime
+Query: "latest iPhone price in India" -> search
+Query: "trending men's jeans" -> search
+Query: "explain recursion" -> chat
+Query: "write a function to reverse a linked list" -> coding
+
+Return ONLY one word, lowercase, no punctuation:
+chat
+search
+coding
+pdf
+ppt
+vision
+datetime
+
+        User Query: ${state.prompt}`;
+
+  const response = await llm.invoke(prompt);
+  return { ...state, agent: response.content.trim().toLowerCase() };
 };

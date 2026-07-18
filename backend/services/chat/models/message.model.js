@@ -11,6 +11,7 @@ const messageSchema = new Schema(
             enum: ['user', 'assistant'],
         },
         content: String,
+        images: [String],
     },
     {
         timestamps: true,

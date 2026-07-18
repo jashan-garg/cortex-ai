@@ -6,7 +6,10 @@ const sendMessage = async (payload) => {
         return data;
     } catch (error) {
         console.log(error);
-        return null;
+        return {
+            answer: 'Something went wrong, please try again.',
+            images: [],
+        };
     }
 };
 

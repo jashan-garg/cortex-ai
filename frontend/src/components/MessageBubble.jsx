@@ -1,95 +1,253 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useState, useRef, useLayoutEffect } from 'react';
-import { ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, Copy, Check, X } from 'lucide-react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-const COLLAPSED_MAX_HEIGHT = 220; // px
+const COLLAPSED_MAX_HEIGHT = 220;
 
-const MessageBubble = ({ role, content }) => {
-    const isUser = role === 'user';
-    const [expanded, setExpanded] = useState(false);
-    const [isOverflowing, setIsOverflowing] = useState(false);
-    const [copied, setCopied] = useState(false);
-    const contentRef = useRef(null);
+const getImageUrl = (img) => {
+  if (!img) return null;
+  if (typeof img === 'string') return img;
+  return img.url || img.src || img.path || null;
+};
 
-    useLayoutEffect(() => {
-        if (contentRef.current) {
-            setIsOverflowing(
-                contentRef.current.scrollHeight > COLLAPSED_MAX_HEIGHT
-            );
-        }
-    }, [content]);
+const ImageGrid = ({ images, isUser, onSelect }) => {
+  const urls = (images || []).map(getImageUrl).filter(Boolean);
+  if (!urls.length) return null;
 
-    const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(content);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-        } catch (err) {
-            console.error('Failed to copy message:', err);
-        }
-    };
-
+  if (urls.length === 1) {
     return (
-        <div className="w-full py-3">
-            <div
-                className={`max-w-3xl mx-auto px-3 md:px-4 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
-            >
-                <div className={`min-w-0 ${isUser ? 'max-w-[75%]' : 'w-full'}`}>
-                    <div
-                        ref={contentRef}
-                        className={`overflow-hidden wrap-break-word text-[15px] leading-7 ${
-                            isUser
-                                ? 'bg-white/10 text-slate-100 rounded-3xl px-4 py-2.5 whitespace-pre-wrap'
-                                : 'text-slate-100 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:my-2 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:my-2 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:my-1 [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1.5 [&_a]:text-indigo-400 [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-2 [&_blockquote]:border-white/20 [&_blockquote]:pl-3 [&_blockquote]:text-slate-400 [&_blockquote]:my-2 [&_code]:bg-white/10 [&_code]:text-[13px] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_pre]:bg-black/40 [&_pre]:border [&_pre]:border-white/7 [&_pre]:rounded-xl [&_pre]:p-3.5 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse [&_th]:border [&_th]:border-white/10 [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-left [&_td]:border [&_td]:border-white/10 [&_td]:px-2.5 [&_td]:py-1.5'
-                        }`}
-                        style={{
-                            maxHeight: expanded
-                                ? 'none'
-                                : `${COLLAPSED_MAX_HEIGHT}px`,
-                            maskImage:
-                                !expanded && isOverflowing
-                                    ? 'linear-gradient(to bottom, black 70%, transparent 100%)'
-                                    : 'none',
-                            WebkitMaskImage:
-                                !expanded && isOverflowing
-                                    ? 'linear-gradient(to bottom, black 70%, transparent 100%)'
-                                    : 'none',
-                        }}
-                    >
-                        <Markdown remarkPlugins={[remarkGfm]}>
-                            {content}
-                        </Markdown>
-                    </div>
-
-                    {isOverflowing && (
-                        <button
-                            onClick={() => setExpanded((prev) => !prev)}
-                            className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-200 bg-transparent border-none cursor-pointer p-0 transition-colors"
-                        >
-                            {expanded ? (
-                                <>
-                                    Show less <ChevronUp size={13} />
-                                </>
-                            ) : (
-                                <>
-                                    Show more <ChevronDown size={13} />
-                                </>
-                            )}
-                        </button>
-                    )}
-                </div>
-
-                <button
-                    onClick={handleCopy}
-                    title={copied ? 'Copied' : 'Copy'}
-                    className="mt-1.5 flex items-center justify-center w-7 h-7 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/7 border-none bg-transparent cursor-pointer transition-all duration-150"
-                >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                </button>
-            </div>
-        </div>
+      <div className={`mb-2 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+        <button
+          onClick={() => onSelect(urls[0])}
+          className="rounded-2xl overflow-hidden max-w-70 sm:max-w-xs"
+        >
+          <img
+            src={urls[0]}
+            alt="attachment"
+            className="w-full max-h-80 object-cover"
+          />
+        </button>
+      </div>
     );
+  }
+
+  return (
+    <div
+      className={`mb-2 flex gap-1.5 overflow-x-auto ${isUser ? 'justify-end' : 'justify-start'}`}
+    >
+      {urls.map((url, i) => (
+        <button
+          key={i}
+          onClick={() => onSelect(url)}
+          className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shrink-0"
+        >
+          <img src={url} className="w-full h-full object-cover" />
+        </button>
+      ))}
+    </div>
+  );
+};
+
+const Lightbox = ({ src, onClose }) => {
+  if (!src) return null;
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-6"
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
+      >
+        <X size={18} />
+      </button>
+
+      <img
+        src={src}
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-full max-h-full rounded-lg object-contain"
+      />
+    </div>
+  );
+};
+
+const MessageBubble = ({ role, content, images }) => {
+  const isUser = role === 'user';
+
+  const [expanded, setExpanded] = useState(false);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+  const [copiedMessage, setCopiedMessage] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(null);
+
+  const [lightboxSrc, setLightboxSrc] = useState(null);
+
+  const contentRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (contentRef.current && isUser) {
+      setIsOverflowing(contentRef.current.scrollHeight > COLLAPSED_MAX_HEIGHT);
+    }
+  }, [content, isUser]);
+
+  const handleMessageCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMessage(true);
+      setTimeout(() => setCopiedMessage(false), 1500);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleCodeCopy = async (code) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 1500);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const hasContent = Boolean(content?.trim());
+
+  return (
+    <div className="w-full py-3">
+      <div
+        className={`max-w-3xl mx-auto px-3 md:px-4 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
+      >
+        <div className={`${isUser ? 'max-w-[75%]' : 'w-full'}`}>
+          <ImageGrid
+            images={images}
+            isUser={isUser}
+            onSelect={setLightboxSrc}
+          />
+
+          {hasContent && (
+            <div
+              ref={contentRef}
+              className={`overflow-hidden wrap-break-word text-[15px] leading-7 ${
+                isUser
+                  ? 'bg-white/10 text-slate-100 rounded-3xl px-4 py-2.5 whitespace-pre-wrap'
+                  : 'text-slate-100 [&_p]:mb-3 [&_p:last-child]:mb-0'
+              }`}
+              style={{
+                maxHeight:
+                  isUser && !expanded ? `${COLLAPSED_MAX_HEIGHT}px` : 'none',
+                maskImage:
+                  isUser && !expanded && isOverflowing
+                    ? 'linear-gradient(to bottom, black 70%, transparent)'
+                    : 'none',
+              }}
+            >
+              <Markdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  pre({ children }) {
+                    return <div className="my-4">{children}</div>;
+                  },
+
+                  code({ node, className, children }) {
+                    const code = String(children).replace(/\n$/, '');
+
+                    const isBlock =
+                      node?.position?.start?.line !==
+                        node?.position?.end?.line || className;
+
+                    if (!isBlock) {
+                      return (
+                        <code className="px-1.5 py-0.5 rounded bg-white/10 text-pink-400">
+                          {code}
+                        </code>
+                      );
+                    }
+
+                    const language =
+                      className?.replace('language-', '') || 'text';
+
+                    return (
+                      <div className="rounded-xl overflow-hidden border border-white/10 bg-[#111318]">
+                        <div className="flex justify-between items-center px-4 py-2 bg-[#1b1d24] border-b border-white/10">
+                          <span className="text-xs text-slate-400 uppercase">
+                            {language}
+                          </span>
+
+                          <button
+                            onClick={() => handleCodeCopy(code)}
+                            className="flex items-center gap-1 text-xs"
+                          >
+                            {copiedCode === code ? (
+                              <>
+                                <Check size={14} /> Copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={14} /> Copy
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        <SyntaxHighlighter
+                          language={language}
+                          style={oneDark}
+                          wrapLongLines
+                          showLineNumbers
+                          customStyle={{
+                            margin: 0,
+                            padding: '16px',
+                            background: '#0d1117',
+                            fontSize: '13px',
+                          }}
+                        >
+                          {code}
+                        </SyntaxHighlighter>
+                      </div>
+                    );
+                  },
+                }}
+              >
+                {content}
+              </Markdown>
+            </div>
+          )}
+
+          {isOverflowing && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="mt-1.5 text-xs text-slate-400 flex items-center gap-1"
+            >
+              {expanded ? (
+                <>
+                  Show less <ChevronUp size={13} />
+                </>
+              ) : (
+                <>
+                  Show more <ChevronDown size={13} />
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
+        {hasContent && (
+          <button
+            onClick={handleMessageCopy}
+            className="mt-1.5 w-7 h-7 flex items-center justify-center text-slate-500 hover:text-slate-200"
+          >
+            {copiedMessage ? <Check size={14} /> : <Copy size={14} />}
+          </button>
+        )}
+      </div>
+
+      <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+    </div>
+  );
 };
 
 export default MessageBubble;

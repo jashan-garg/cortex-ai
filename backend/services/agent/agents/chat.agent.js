@@ -9,9 +9,15 @@ import { getMemory } from '../config/memory.js';
 export const chatAgent = async (state) => {
     const llm = await getModel('chat');
     const history = (await getMemory(state.conversationId)) || [];
-    const searchContext = state.searchResults
-        ? `Web search results: ${JSON.stringify(state.searchResults)} Answer the user using only the above search results.`
-        : ``;
+    const searchContext = state.searchResults?.results?.length
+        ? `Web search results:\n${state.searchResults.results
+              .map(
+                  (r, i) => `[${i + 1}] ${r.title}\n${r.content.slice(0, 1000)}`
+              )
+              .join(
+                  '\n\n'
+              )}\n\nAnswer the user using only the above search results.`
+        : '';
 
     const systemPrompt = `
         You are Cortex AI, an intellegent AI assistant, made by Jashan Garg.
