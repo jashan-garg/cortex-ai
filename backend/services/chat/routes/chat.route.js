@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import {
-    createConversation,
-    getConversations,
-    getMessages,
-    saveMessage,
-    updateConversation,
+  createConversation,
+  getConversations,
+  getMessages,
+  saveMessage,
+  updateConversation,
 } from '../controllers/chat.controller.js';
 
 const router = Router();

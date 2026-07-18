@@ -10,16 +10,16 @@ const PORT = process.env.PORT || 8001;
 
 app.use(express.json());
 app.use((req, res, next) => {
-    console.log('Incoming path:', req.method, req.originalUrl);
-    next();
+  console.log('Incoming path:', req.method, req.originalUrl);
+  next();
 });
 
 app.use('/', router);
 app.get('/', (req, res) => {
-    res.send('Chat server');
+  res.send('Chat server');
 });
 
 app.listen(PORT, () => {
-    console.log(`Chat server is running on port ${PORT}`);
-    connectDB();
+  console.log(`Chat server is running on port ${PORT}`);
+  connectDB();
 });

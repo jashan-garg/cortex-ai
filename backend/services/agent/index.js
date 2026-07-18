@@ -8,16 +8,16 @@ const PORT = process.env.PORT || 8003;
 
 app.use(express.json());
 app.use((req, res, next) => {
-    console.log('Incoming path:', req.method, req.originalUrl);
-    next();
+  console.log('Incoming path:', req.method, req.originalUrl);
+  next();
 });
 app.use('/', router);
 
 app.get('/', (req, res) => {
-    res.send('Agent server');
+  res.send('Agent server');
 });
 
 app.listen(PORT, () => {
-    console.log(`Agent server is running on port ${PORT}`);
-    connectDB();
+  console.log(`Agent server is running on port ${PORT}`);
+  connectDB();
 });

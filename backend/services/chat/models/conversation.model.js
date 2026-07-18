@@ -1,14 +1,14 @@
 import { model, Schema } from 'mongoose';
 
 const conversationSchema = new Schema(
-    {
-        title: {
-            type: String,
-            default: 'New Chat',
-        },
-        userId: String,
+  {
+    title: {
+      type: String,
+      default: 'New Chat',
     },
-    { timestamps: true }
+    userId: String,
+  },
+  { timestamps: true }
 );
 
 const Conversation = new model('Conversation', conversationSchema);

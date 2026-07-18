@@ -6,21 +6,21 @@ import { useDispatch } from 'react-redux';
 import { setUserdata } from './redux/userSlice.js';
 
 const App = () => {
-    const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
-    useEffect(() => {
-        const getUser = async () => {
-            const data = await getCurrentUser();
-            dispatch(setUserdata(data));
-        };
-        getUser();
-    }, []);
+  useEffect(() => {
+    const getUser = async () => {
+      const data = await getCurrentUser();
+      dispatch(setUserdata(data));
+    };
+    getUser();
+  }, []);
 
-    return (
-        <>
-            <Home />
-        </>
-    );
+  return (
+    <>
+      <Home />
+    </>
+  );
 };
 
 export default App;

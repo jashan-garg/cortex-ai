@@ -1,19 +1,19 @@
 {
-    "name": "auth",
-    "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
-    "scripts": {
-        "dev": "clear && nodemon index.js"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "type": "module",
-    "dependencies": {
-        "dotenv": "^17.4.2",
-        "express": "^5.2.1",
-        "firebase-admin": "^14.1.0",
-        "mongoose": "^9.7.3"
-    }
+  "name": "auth",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "clear && nodemon index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase-admin": "^14.1.0",
+    "mongoose": "^9.7.3"
+  }
 }

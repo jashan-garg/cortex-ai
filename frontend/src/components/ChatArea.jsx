@@ -8,35 +8,35 @@ import getMessages from '../features/getMessages.js';
 import { setMessages } from '../redux/messageSlice.js';
 
 const ChatArea = () => {
-    const { selectedConversation } = useSelector((state) => state.conversation);
-    const dispatch = useDispatch();
+  const { selectedConversation } = useSelector((state) => state.conversation);
+  const dispatch = useDispatch();
 
-    useEffect(() => {
-        if (!selectedConversation) return;
+  useEffect(() => {
+    if (!selectedConversation) return;
 
-        const getMsg = async () => {
-            try {
-                if (selectedConversation.title === 'New Chat') {
-                    dispatch(setMessages([]));
-                    return;
-                }
-                const data = await getMessages(selectedConversation?._id);
-                dispatch(setMessages(data));
-            } catch (error) {
-                console.log(error);
-            }
-        };
+    const getMsg = async () => {
+      try {
+        if (selectedConversation.title === 'New Chat') {
+          dispatch(setMessages([]));
+          return;
+        }
+        const data = await getMessages(selectedConversation?._id);
+        dispatch(setMessages(data));
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
-        getMsg();
-    }, [selectedConversation?._id]);
+    getMsg();
+  }, [selectedConversation?._id]);
 
-    return (
-        <div className={`flex-1 flex flex-col relative bg-[#0d0d0d]`}>
-            <Nav />
-            <MessageList />
-            <ChatInput />
-        </div>
-    );
+  return (
+    <div className={`flex-1 flex flex-col relative bg-[#0d0d0d]`}>
+      <Nav />
+      <MessageList />
+      <ChatInput />
+    </div>
+  );
 };
 
 export default ChatArea;

@@ -6,12 +6,12 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: 'cortex-ai-c8d48.firebaseapp.com',
-    projectId: 'cortex-ai-c8d48',
-    storageBucket: 'cortex-ai-c8d48.firebasestorage.app',
-    messagingSenderId: '671557770168',
-    appId: '1:671557770168:web:c8e75f663b698f13140d4d',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: 'cortex-ai-c8d48.firebaseapp.com',
+  projectId: 'cortex-ai-c8d48',
+  storageBucket: 'cortex-ai-c8d48.firebasestorage.app',
+  messagingSenderId: '671557770168',
+  appId: '1:671557770168:web:c8e75f663b698f13140d4d',
 };
 
 // Initialize Firebase

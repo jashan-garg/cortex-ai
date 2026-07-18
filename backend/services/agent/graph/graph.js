@@ -20,33 +20,33 @@ workflow.addNode('ppt', pptAgent);
 
 workflow.addEdge('__start__', 'router');
 workflow.addConditionalEdges(
-    'router',
-    (state) => {
-        switch (state.agent) {
-            case 'chat':
-                return 'chat';
-            case 'search':
-                return 'search';
-            case 'coding':
-                return 'coding';
-            case 'vision':
-                return 'vision';
-            case 'pdf':
-                return 'pdf';
-            case 'ppt':
-                return 'ppt';
-            default:
-                return 'chat';
-        }
-    },
-    {
-        chat: 'chat',
-        search: 'search',
-        coding: 'coding',
-        vision: 'vision',
-        pdf: 'pdf',
-        ppt: 'ppt',
+  'router',
+  (state) => {
+    switch (state.agent) {
+      case 'chat':
+        return 'chat';
+      case 'search':
+        return 'search';
+      case 'coding':
+        return 'coding';
+      case 'vision':
+        return 'vision';
+      case 'pdf':
+        return 'pdf';
+      case 'ppt':
+        return 'ppt';
+      default:
+        return 'chat';
     }
+  },
+  {
+    chat: 'chat',
+    search: 'search',
+    coding: 'coding',
+    vision: 'vision',
+    pdf: 'pdf',
+    ppt: 'ppt',
+  }
 );
 workflow.addEdge('search', 'chat');
 workflow.addEdge('chat', '__end__');

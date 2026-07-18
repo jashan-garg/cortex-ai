@@ -11,17 +11,17 @@ const PORT = process.env.PORT || 8001;
 app.use(express.json());
 
 app.use((req, res, next) => {
-    console.log('Incoming path:', req.method, req.originalUrl);
-    next();
+  console.log('Incoming path:', req.method, req.originalUrl);
+  next();
 });
 
 app.use('/api/auth', router);
 
 app.get('/', (req, res) => {
-    res.send('Auth server');
+  res.send('Auth server');
 });
 
 app.listen(PORT, () => {
-    console.log(`Auth server is running on port ${PORT}`);
-    connectDB();
+  console.log(`Auth server is running on port ${PORT}`);
+  connectDB();
 });
