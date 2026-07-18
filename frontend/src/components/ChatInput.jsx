@@ -14,7 +14,7 @@ import { useState, useRef } from 'react';
 import sendMessage from '../features/sendMessage.js';
 import { createConversation } from '../features/createConversation.js';
 import { useDispatch, useSelector } from 'react-redux';
-import { addMessage, setDraft } from '../redux/messageSlice.js';
+import { addMessage, setDraft, setArtifacts } from '../redux/messageSlice.js';
 import {
   addConversation,
   setConvTitle,
@@ -34,7 +34,6 @@ const ChatInput = () => {
 
   const value = draft || '';
 
-  // ✅ AUTO RESIZE
   const autoResize = () => {
     const el = textareaRef.current;
     if (!el) return;
@@ -87,8 +86,8 @@ const ChatInput = () => {
     dispatch(setDraft(''));
 
     const data = await sendMessage(payload);
+    dispatch(setArtifacts(data.artifacts || []));
 
-    // ✅ FIX: prevent "everything becomes code block"
     const cleanAnswer =
       typeof data.answer === 'string'
         ? data.answer.replace(/^```[\s\S]*?```$/, (match) =>
@@ -104,10 +103,7 @@ const ChatInput = () => {
       })
     );
 
-    // reset height after send
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
   };
 
   const agents = [

@@ -1,4 +1,14 @@
-import { model, Schema } from 'mongoose';
+import { model, Mongoose, Schema } from 'mongoose';
+
+const fileSchema = new Schema(
+  { name: String, content: String },
+  { _id: false }
+);
+
+const artifactSchema = new Schema(
+  { id: Number, type: String, files: [fileSchema], title: String },
+  { _id: false }
+);
 
 const messageSchema = new Schema(
   {
@@ -12,10 +22,9 @@ const messageSchema = new Schema(
     },
     content: String,
     images: [String],
+    artifacts: [artifactSchema],
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 const Message = model('Message', messageSchema);

@@ -77,15 +77,11 @@ const Lightbox = ({ src, onClose }) => {
 
 const MessageBubble = ({ role, content, images }) => {
   const isUser = role === 'user';
-
   const [expanded, setExpanded] = useState(false);
   const [isOverflowing, setIsOverflowing] = useState(false);
-
   const [copiedMessage, setCopiedMessage] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
-
   const [lightboxSrc, setLightboxSrc] = useState(null);
-
   const contentRef = useRef(null);
 
   useLayoutEffect(() => {
@@ -212,7 +208,7 @@ const MessageBubble = ({ role, content, images }) => {
                   },
                 }}
               >
-                {content}
+                {content ? content : 'Some error occured, please try again.'}
               </Markdown>
             </div>
           )}
