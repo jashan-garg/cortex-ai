@@ -10,7 +10,7 @@ import {
   Presentation,
   Zap,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import sendMessage from '../features/sendMessage.js';
 import { createConversation } from '../features/createConversation.js';
 import { useDispatch, useSelector } from 'react-redux';
@@ -26,11 +26,30 @@ const ChatInput = () => {
   const [selectedAgent, setSelectedAgent] = useState('Auto');
   const [isFocused, setIsFocused] = useState(false);
 
+  const textareaRef = useRef(null);
+
   const { selectedConversation } = useSelector((state) => state.conversation);
   const { draft } = useSelector((state) => state.message);
   const dispatch = useDispatch();
 
   const value = draft || '';
+
+  // ✅ AUTO RESIZE
+  const autoResize = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    el.style.height = 'auto';
+    const maxHeight = 200;
+
+    if (el.scrollHeight > maxHeight) {
+      el.style.height = maxHeight + 'px';
+      el.style.overflowY = 'auto';
+    } else {
+      el.style.height = el.scrollHeight + 'px';
+      el.style.overflowY = 'hidden';
+    }
+  };
 
   const handleSendMessage = async () => {
     const prompt = value.trim();
@@ -68,14 +87,27 @@ const ChatInput = () => {
     dispatch(setDraft(''));
 
     const data = await sendMessage(payload);
-    console.log(data);
+
+    // ✅ FIX: prevent "everything becomes code block"
+    const cleanAnswer =
+      typeof data.answer === 'string'
+        ? data.answer.replace(/^```[\s\S]*?```$/, (match) =>
+            match.replace(/```/g, '')
+          )
+        : '';
+
     dispatch(
       addMessage({
         role: 'assistant',
-        content: data.answer,
+        content: cleanAnswer,
         images: data.images,
       })
     );
+
+    // reset height after send
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
   };
 
   const agents = [
@@ -96,18 +128,22 @@ const ChatInput = () => {
       <div className="px-4 pb-6 pt-3 bg-[#0d0d0d]">
         <div className="max-w-3xl mx-auto">
           <div
-            className={`flex flex-col gap-2.5 rounded-2xl px-4 pt-3 pb-2.5bg-[#111111] border border-white/6 transition-all duration-200
-                        ${
-                          isFocused
-                            ? 'border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]'
-                            : ''
-                        }`}
+            className={`flex flex-col gap-2.5 rounded-2xl px-4 pt-3 pb-2.5 bg-[#111111] border border-white/6 transition-all duration-200
+              ${
+                isFocused
+                  ? 'border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]'
+                  : ''
+              }`}
           >
             <textarea
+              ref={textareaRef}
               placeholder="Ask anything"
               rows={2}
               value={value}
-              onChange={(e) => dispatch(setDraft(e.target.value))}
+              onChange={(e) => {
+                dispatch(setDraft(e.target.value));
+                autoResize();
+              }}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               onKeyDown={(e) => {
@@ -116,20 +152,12 @@ const ChatInput = () => {
                   handleSendMessage();
                 }
               }}
-              className="w-full bg-transparent outline-none resize-none 
-                            text-[15px] text-neutral-200 
-                            placeholder:text-neutral-500 
-                            leading-relaxed px-1
-                            scrollbar-none [&::-webkit-scrollbar]:hidden"
+              className="w-full bg-transparent outline-none resize-none text-[15px] text-neutral-200 placeholder:text-neutral-500 leading-relaxed px-1 overflow-hidden"
             />
 
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-                <button
-                  className="w-8 h-8 flex items-center justify-center 
-                                    rounded-full text-neutral-400 
-                                    hover:text-white hover:bg-white/5 transition"
-                >
+                <button className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-white/5 transition">
                   <Paperclip size={16} />
                 </button>
 
@@ -157,11 +185,7 @@ const ChatInput = () => {
               </div>
 
               <div className="flex items-center gap-1">
-                <button
-                  className="w-8 h-8 flex items-center justify-center 
-                                    rounded-full text-neutral-400 
-                                    hover:text-white hover:bg-white/5 transition"
-                >
+                <button className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-white/5 transition">
                   <Mic size={16} />
                 </button>
 
