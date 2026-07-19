@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { graph } from '../graph/graph.js';
 import { addMessage } from '../config/memory.js';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { s3 } from '../config/s3.js';
+import { Readable } from 'stream';
 
 export const agent = async (req, res) => {
   try {
@@ -33,5 +36,42 @@ export const agent = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: `Error: ${error.message}` });
+  }
+};
+
+export const getPdf = async (req, res) => {
+  try {
+    const { key } = req.params;
+    console.log('Fetching PDF key:', key);
+
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+    });
+
+    const data = await s3.send(command);
+    console.log(
+      'S3 object loaded, ContentType:',
+      data.ContentType,
+      'ContentLength:',
+      data.ContentLength
+    );
+
+    if (!data.Body) {
+      console.log('Body missing');
+      return res.status(404).send('File not found');
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline');
+    if (data.ContentLength) res.setHeader('Content-Length', data.ContentLength);
+
+    const stream = Readable.from(data.Body);
+    stream.on('error', (err) => console.error('Stream error:', err));
+    stream.on('end', () => console.log('Stream ended'));
+    stream.pipe(res);
+  } catch (err) {
+    console.error('PDF fetch failed:', err);
+    res.status(500).send('Failed to fetch PDF');
   }
 };
