@@ -75,3 +75,54 @@ export const getPdf = async (req, res) => {
     res.status(500).send('Failed to fetch PDF');
   }
 };
+
+export const getPpt = async (req, res) => {
+  try {
+    const { key } = req.params;
+    console.log('Fetching PPT key:', key);
+
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+    });
+
+    const data = await s3.send(command);
+
+    console.log(
+      'S3 object loaded, ContentType:',
+      data.ContentType,
+      'ContentLength:',
+      data.ContentLength
+    );
+
+    if (!data.Body) {
+      console.log('Body missing');
+      return res.status(404).send('File not found');
+    }
+
+    /** ---------- HEADERS (IMPORTANT) ---------- */
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    );
+
+    // PPT usually downloads instead of inline view
+    res.setHeader('Content-Disposition', `attachment; filename="${key}"`);
+
+    if (data.ContentLength) {
+      res.setHeader('Content-Length', data.ContentLength);
+    }
+
+    /** ---------- STREAM ---------- */
+    const stream = Readable.from(data.Body);
+
+    stream.on('error', (err) => console.error('Stream error:', err));
+
+    stream.on('end', () => console.log('PPT stream ended'));
+
+    stream.pipe(res);
+  } catch (err) {
+    console.error('PPT fetch failed:', err);
+    res.status(500).send('Failed to fetch PPT');
+  }
+};

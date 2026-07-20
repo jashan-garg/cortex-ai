@@ -42,7 +42,7 @@ Rules:
 - no markdown, no explanation
 
 Topic: ${state.prompt}
-`;
+    `;
 
     const res = await llm.invoke(prompt);
     const data = safeParse(res.content);

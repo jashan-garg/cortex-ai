@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/static-components */
 /* eslint-disable react-hooks/set-state-in-effect */
 import {
   Code2,
@@ -20,16 +22,22 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import api from '../../utils/axios.js';
-import { setPanelCollapsed, setArtifacts } from '../redux/messageSlice.js'; // adjust path to your actual slice location
+import { setPanelCollapsed, setArtifacts } from '../redux/messageSlice.js';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url
 ).toString();
 
-const PdfViewer = ({ fileId }) => {
+const PdfViewer = ({
+  fileId,
+  loadingText = 'Loading PDF...',
+  errorText = 'Failed to load PDF.',
+}) => {
   const containerRef = useRef(null);
   const pageRefs = useRef([]);
+  const objectUrlRef = useRef(null);
+
   const [containerWidth, setContainerWidth] = useState(0);
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,35 +48,40 @@ const PdfViewer = ({ fileId }) => {
   useEffect(() => {
     if (!fileId) return;
 
-    let objectUrl = null;
-    setLoadingPdf(true);
-    setError(null);
+    let cancelled = false;
+
+    // Reset state for new file
     setNumPages(null);
+    setCurrentPage(1);
+    setError(null);
+    setPdfUrl(null);
+    setLoadingPdf(true);
+    pageRefs.current = [];
 
     api
       .get(`/api/agent/get-pdf/${fileId}`, { responseType: 'blob' })
       .then((response) => {
-        objectUrl = URL.createObjectURL(response.data);
-        setPdfUrl(objectUrl);
+        if (cancelled) return;
+        const url = URL.createObjectURL(response.data);
+        objectUrlRef.current = url;
+        setPdfUrl(url);
         setLoadingPdf(false);
       })
       .catch((err) => {
+        if (cancelled) return;
         console.error('Failed to fetch PDF:', err);
-        setError('Failed to load PDF.');
+        setError(errorText);
         setLoadingPdf(false);
       });
 
     return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      cancelled = true;
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
     };
-  }, [fileId]);
-
-  useEffect(() => {
-    setNumPages(null);
-    setCurrentPage(1);
-    setError(null);
-    pageRefs.current = [];
-  }, [fileId]);
+  }, [fileId, errorText]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -101,10 +114,13 @@ const PdfViewer = ({ fileId }) => {
     setNumPages(numPages);
   }, []);
 
-  const onDocumentLoadError = useCallback((err) => {
-    console.error('Failed to render PDF:', err);
-    setError('Failed to render PDF.');
-  }, []);
+  const onDocumentLoadError = useCallback(
+    (err) => {
+      console.error('Failed to render PDF:', err);
+      setError(errorText);
+    },
+    [errorText]
+  );
 
   return (
     <div className="flex flex-col h-full bg-zinc-950">
@@ -115,21 +131,23 @@ const PdfViewer = ({ fileId }) => {
         {error ? (
           <div className="text-zinc-400 text-sm self-center">{error}</div>
         ) : loadingPdf || !pdfUrl ? (
-          <div className="text-zinc-400 text-sm py-10">Loading PDF...</div>
+          <div className="text-zinc-400 text-sm py-10">{loadingText}</div>
         ) : (
           <Document
             file={pdfUrl}
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={onDocumentLoadError}
             loading={
-              <div className="text-zinc-400 text-sm py-10">Loading PDF...</div>
+              <div className="text-zinc-400 text-sm py-10">{loadingText}</div>
             }
           >
             {containerWidth > 0 &&
               Array.from({ length: numPages || 0 }, (_, i) => (
                 <div
                   key={i}
-                  ref={(el) => (pageRefs.current[i] = el)}
+                  ref={(el) => {
+                    pageRefs.current[i] = el;
+                  }}
                   data-page-number={i + 1}
                   className={
                     i < numPages - 1
@@ -190,6 +208,13 @@ const Artifact = () => {
     if (artifacts?.length) setPanelOpen(true);
   }, [artifacts]);
 
+  // Reset per-file UI when the active artifact changes
+  useEffect(() => {
+    setActiveFile(0);
+    setTab('code');
+    setCopied(false);
+  }, [artifacts?.[0]?.id]);
+
   const allArtifacts = useMemo(() => {
     const map = new Map();
     messages?.forEach((msg) => {
@@ -207,7 +232,17 @@ const Artifact = () => {
 
   const isPDF = artifact?.type === 'PDF';
   const isPPT = artifact?.type === 'PPT';
-  const pdfFileId = artifact?.files?.[0]?.content;
+
+  // For viewing we always need the PDF representation
+  const viewFile =
+    artifact?.files?.find((f) => f.name?.endsWith('.pdf')) ||
+    artifact?.files?.[0];
+  const docFileId = viewFile?.content;
+
+  // For PPT downloads we need the original .pptx file
+  const pptxFile =
+    artifact?.files?.find((f) => f.name?.endsWith('.pptx')) ||
+    artifact?.files?.[0];
 
   const file = artifact?.files?.[activeFile];
   const htmlFile = artifact?.files?.find((f) => f.name === 'index.html');
@@ -268,11 +303,10 @@ const Artifact = () => {
     URL.revokeObjectURL(blobUrl);
   };
 
-  const downloadRemoteBlob = async (targetArtifact) => {
-    const target = targetArtifact?.files?.[0];
-    if (!target?.content) return;
+  const downloadRemoteBlob = async (targetFile, endpoint) => {
+    if (!targetFile?.content) return;
 
-    const res = await api.get(`/api/agent/get-pdf/${target.content}`, {
+    const res = await api.get(`${endpoint}${targetFile.content}`, {
       responseType: 'blob',
     });
     const blob = res.data;
@@ -280,7 +314,7 @@ const Artifact = () => {
 
     const a = document.createElement('a');
     a.href = blobUrl;
-    a.download = target.name || targetArtifact?.title || 'download';
+    a.download = targetFile.name || 'download';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -289,8 +323,10 @@ const Artifact = () => {
 
   const handleDownload = async () => {
     try {
-      if (isPDF || isPPT) {
-        await downloadRemoteBlob(artifact);
+      if (isPPT) {
+        await downloadRemoteBlob(pptxFile, '/api/agent/get-ppt/');
+      } else if (isPDF) {
+        await downloadRemoteBlob(viewFile, '/api/agent/get-pdf/');
       } else {
         downloadTextFile(file);
       }
@@ -302,8 +338,14 @@ const Artifact = () => {
   const handleDownloadAll = async () => {
     for (const a of allArtifacts) {
       try {
-        if (a.type === 'PDF' || a.type === 'PPT') {
-          await downloadRemoteBlob(a);
+        if (a.type === 'PPT') {
+          const p =
+            a?.files?.find((f) => f.name?.endsWith('.pptx')) || a?.files?.[0];
+          await downloadRemoteBlob(p, '/api/agent/get-ppt/');
+        } else if (a.type === 'PDF') {
+          const p =
+            a?.files?.find((f) => f.name?.endsWith('.pdf')) || a?.files?.[0];
+          await downloadRemoteBlob(p, '/api/agent/get-pdf/');
         } else {
           a.files?.forEach(downloadTextFile);
         }
@@ -317,6 +359,8 @@ const Artifact = () => {
     dispatch(setArtifacts([]));
   };
 
+  const HeaderIcon = artifactIcon(artifact?.type);
+
   return (
     <motion.div
       className="hidden lg:flex h-full border border-zinc-800 flex-col overflow-hidden shrink-0"
@@ -327,8 +371,6 @@ const Artifact = () => {
       {!panelCollapsed ? (
         <div className="flex flex-col h-full bg-[#0d0d0d]">
           {!artifact ? (
-            // Fallback: nothing currently open, browse all artifacts
-            // generated so far in this conversation.
             <>
               <div className="h-14 px-4 border-b border-zinc-800 flex items-center gap-3 shrink-0">
                 <button
@@ -400,7 +442,7 @@ const Artifact = () => {
 
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <div className="w-6 h-6 flex items-center justify-center rounded-md bg-zinc-800 border border-zinc-700">
-                    <Code2 size={12} className="text-zinc-300" />
+                    <HeaderIcon size={12} className="text-zinc-300" />
                   </div>
 
                   <div className="text-[13px] font-medium text-zinc-100 truncate">
@@ -408,7 +450,8 @@ const Artifact = () => {
                   </div>
                 </div>
 
-                {!isPDF && tab === 'code' && (
+                {/* Copy — code only */}
+                {!isPDF && !isPPT && tab === 'code' && (
                   <button
                     onClick={handleCopy}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg"
@@ -417,7 +460,8 @@ const Artifact = () => {
                   </button>
                 )}
 
-                {((!isPDF && tab === 'code') || isPDF || isPPT) && (
+                {/* Download — code (code tab), PDF, or PPT */}
+                {((!isPDF && !isPPT && tab === 'code') || isPDF || isPPT) && (
                   <button
                     onClick={handleDownload}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg"
@@ -426,7 +470,8 @@ const Artifact = () => {
                   </button>
                 )}
 
-                {canPreview && !isPDF && (
+                {/* Code / Preview toggle — code only */}
+                {canPreview && !isPDF && !isPPT && (
                   <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-lg">
                     <button
                       onClick={() => setTab('code')}
@@ -460,7 +505,8 @@ const Artifact = () => {
                 </button>
               </div>
 
-              {tab === 'code' && !isPDF && (
+              {/* File tabs — code only */}
+              {tab === 'code' && !isPDF && !isPPT && (
                 <div className="flex border-b border-zinc-800 overflow-x-auto">
                   {artifact.files?.map((f, index) => (
                     <button
@@ -479,8 +525,18 @@ const Artifact = () => {
               )}
 
               <div className="flex-1 overflow-hidden">
-                {isPDF ? (
-                  <PdfViewer fileId={pdfFileId} />
+                {isPDF || isPPT ? (
+                  <PdfViewer
+                    fileId={docFileId}
+                    loadingText={
+                      isPPT ? 'Loading presentation...' : 'Loading PDF...'
+                    }
+                    errorText={
+                      isPPT
+                        ? 'Failed to load presentation.'
+                        : 'Failed to load PDF.'
+                    }
+                  />
                 ) : canPreview && tab === 'preview' ? (
                   <iframe
                     title="preview"
