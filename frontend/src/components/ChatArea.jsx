@@ -28,14 +28,7 @@ const ChatArea = () => {
         const messages = Array.isArray(data) ? data : [];
 
         dispatch(setMessages(messages));
-
-        const latestArtifactMessage = [...messages]
-          .reverse()
-          .find(
-            (msg) => Array.isArray(msg?.artifacts) && msg.artifacts.length > 0
-          );
-
-        dispatch(setArtifacts(latestArtifactMessage?.artifacts || []));
+        dispatch(setArtifacts([]));
       } catch (error) {
         console.log(error);
         dispatch(setArtifacts([]));

@@ -19,6 +19,7 @@ import {
 // import { createConversation } from '../features/createConversation.js';
 import logout from '../features/logout.js';
 import { setUserdata } from '../redux/userSlice.js';
+import { setArtifacts } from '../redux/messageSlice.js';
 
 const SideBar = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -63,6 +64,7 @@ const SideBar = () => {
           className="flex items-center justify-center w-9 h-9 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-white/8 transition-colors duration-150 bg-transparent border-none cursor-pointer mt-1"
           onClick={() => {
             dispatch(setSelectedConversation(null));
+            dispatch(setArtifacts(null));
           }}
         >
           <SquarePen size={17} />
@@ -79,7 +81,10 @@ const SideBar = () => {
                     ? 'bg-white/10 text-slate-100'
                     : 'text-slate-500 hover:bg-white/8 hover:text-slate-300'
                 }`}
-                onClick={() => dispatch(setSelectedConversation(conversation))}
+                onClick={() => {
+                  dispatch(setSelectedConversation(conversation));
+                  dispatch(setArtifacts(null));
+                }}
               >
                 <MessageSquare size={15} />
               </div>
@@ -126,6 +131,7 @@ const SideBar = () => {
             className="w-full flex items-center gap-2.5 text-[13.5px] font-medium text-slate-200 rounded-lg px-2.5 py-2 border-none bg-transparent cursor-pointer hover:bg-white/8 transition-colors duration-150"
             onClick={() => {
               dispatch(setSelectedConversation(null));
+              dispatch(setArtifacts(null));
             }}
           >
             <SquarePen size={16} className="text-slate-400" />
@@ -151,7 +157,10 @@ const SideBar = () => {
                 className={`group flex items-center gap-2 cursor-pointer mb-0.5 px-2.5 py-2 rounded-lg transition-colors duration-150 ${
                   isActive ? 'bg-white/10' : 'hover:bg-white/8'
                 }`}
-                onClick={() => dispatch(setSelectedConversation(conversation))}
+                onClick={() => {
+                  dispatch(setSelectedConversation(conversation));
+                  dispatch(setArtifacts(null));
+                }}
               >
                 <span
                   className={`text-[13.5px] truncate ${
