@@ -1,9 +1,20 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useState, useRef, useLayoutEffect } from 'react';
-import { ChevronDown, ChevronUp, Copy, Check, X } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Check,
+  X,
+  Code2,
+  FileText,
+  Presentation,
+} from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useDispatch } from 'react-redux';
+import { openArtifactPanel } from '../redux/messageSlice.js'; // adjust path to your actual slice location
 
 const COLLAPSED_MAX_HEIGHT = 220;
 
@@ -75,7 +86,45 @@ const Lightbox = ({ src, onClose }) => {
   );
 };
 
-const MessageBubble = ({ role, content, images }) => {
+const artifactIcon = (type) => {
+  if (type === 'PDF') return FileText;
+  if (type === 'PPT') return Presentation;
+  return Code2;
+};
+
+const ArtifactChips = ({ artifacts, isUser }) => {
+  const dispatch = useDispatch();
+  if (!artifacts?.length) return null;
+
+  return (
+    <div
+      className={`mb-2 flex flex-col gap-2 ${isUser ? 'items-end' : 'items-start'}`}
+    >
+      {artifacts.map((artifact) => {
+        const Icon = artifactIcon(artifact.type);
+        return (
+          <button
+            key={artifact.id}
+            onClick={() => dispatch(openArtifactPanel([artifact]))}
+            className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 max-w-70 sm:max-w-xs"
+          >
+            <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-zinc-800 border border-zinc-700">
+              <Icon size={15} className="text-zinc-300" />
+            </div>
+            <div className="min-w-0 text-left">
+              <div className="text-[13px] text-slate-100 truncate">
+                {artifact.title}
+              </div>
+              <div className="text-[11px] text-slate-500">Click to open</div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+const MessageBubble = ({ role, content, images, artifacts }) => {
   const isUser = role === 'user';
   const [expanded, setExpanded] = useState(false);
   const [isOverflowing, setIsOverflowing] = useState(false);
@@ -123,6 +172,8 @@ const MessageBubble = ({ role, content, images }) => {
             isUser={isUser}
             onSelect={setLightboxSrc}
           />
+
+          <ArtifactChips artifacts={artifacts} isUser={isUser} />
 
           {hasContent && (
             <div

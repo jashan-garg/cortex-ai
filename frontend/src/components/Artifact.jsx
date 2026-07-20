@@ -7,15 +7,20 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Download,
+  X,
+  ChevronRight,
+  FileText,
+  Presentation,
 } from 'lucide-react';
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { easeInOut, motion } from 'motion/react';
 import Editor from '@monaco-editor/react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import api from '../../utils/axios.js';
+import { setPanelCollapsed, setArtifacts } from '../redux/messageSlice.js'; // adjust path to your actual slice location
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -156,18 +161,53 @@ const PdfViewer = ({ fileId }) => {
   );
 };
 
-const Artifact = () => {
-  const { selectedConversation } = useSelector((state) => state.conversation);
-  const { artifacts } = useSelector((state) => state.message);
+const artifactIcon = (type) => {
+  if (type === 'PDF') return FileText;
+  if (type === 'PPT') return Presentation;
+  return Code2;
+};
 
-  const [collapsed, setCollapsed] = useState(false);
+const artifactLabel = (a) => {
+  if (a.type === 'PDF') return 'PDF';
+  if (a.type === 'PPT') return 'Presentation';
+  const count = a.files?.length || 0;
+  return `Code · ${count} file${count === 1 ? '' : 's'}`;
+};
+
+const Artifact = () => {
+  const dispatch = useDispatch();
+  const { selectedConversation } = useSelector((state) => state.conversation);
+  const { artifacts, messages, panelCollapsed } = useSelector(
+    (state) => state.message
+  );
+
   const [tab, setTab] = useState('code');
   const [activeFile, setActiveFile] = useState(0);
   const [copied, setCopied] = useState(false);
 
-  if (!artifacts?.length || !selectedConversation) return null;
+  // Latches open once an artifact has been opened, so clearing the
+  // current selection (via the X button) shows the fallback list
+  // instead of unmounting the whole panel.
+  const [panelOpen, setPanelOpen] = useState(Boolean(artifacts?.length));
 
-  const artifact = artifacts[0];
+  useEffect(() => {
+    if (artifacts?.length) setPanelOpen(true);
+  }, [artifacts]);
+
+  const allArtifacts = useMemo(() => {
+    const map = new Map();
+    messages?.forEach((msg) => {
+      msg?.artifacts?.forEach((a) => {
+        if (a?.id != null) map.set(a.id, a);
+      });
+    });
+    return Array.from(map.values());
+  }, [messages]);
+
+  if (!panelOpen || !selectedConversation) return null;
+
+  const artifact = artifacts?.[0] || null;
+  const expandedWidth = artifact ? 600 : 360;
 
   const isPDF = artifact?.type === 'PDF';
   const isPPT = artifact?.type === 'PPT';
@@ -218,167 +258,266 @@ const Artifact = () => {
     }
   };
 
+  const downloadTextFile = (targetFile) => {
+    if (!targetFile?.content) return;
+    const blob = new Blob([targetFile.content], { type: 'text/plain' });
+    const blobUrl = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = targetFile.name || 'file.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  };
+
+  const downloadRemoteBlob = async (targetArtifact) => {
+    const target = targetArtifact?.files?.[0];
+    if (!target?.content) return;
+
+    const res = await api.get(`/api/agent/get-pdf/${target.content}`, {
+      responseType: 'blob',
+    });
+    const blob = res.data;
+    const blobUrl = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = target.name || targetArtifact?.title || 'download';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  };
+
   const handleDownload = async () => {
     try {
       if (isPDF || isPPT) {
-        const target = artifact?.files?.[0];
-        if (!target?.content) return;
-
-        const res = await api.get(`/api/agent/get-pdf/${target.content}`);
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = target.name || artifact?.title || 'download';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(blobUrl);
+        await downloadRemoteBlob(artifact);
       } else {
-        if (!file?.content) return;
-
-        const blob = new Blob([file.content], { type: 'text/plain' });
-        const blobUrl = URL.createObjectURL(blob);
-
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = file.name || 'file.txt';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(blobUrl);
+        downloadTextFile(file);
       }
     } catch (error) {
       console.error('Download failed:', error);
     }
   };
 
+  const handleDownloadAll = async () => {
+    for (const a of allArtifacts) {
+      try {
+        if (a.type === 'PDF' || a.type === 'PPT') {
+          await downloadRemoteBlob(a);
+        } else {
+          a.files?.forEach(downloadTextFile);
+        }
+      } catch (error) {
+        console.error(`Download failed for "${a.title}":`, error);
+      }
+    }
+  };
+
+  const handleCloseArtifact = () => {
+    dispatch(setArtifacts([]));
+  };
+
   return (
     <motion.div
       className="hidden lg:flex h-full border border-zinc-800 flex-col overflow-hidden shrink-0"
       initial={{ width: 600 }}
-      animate={{ width: collapsed ? 48 : 600 }}
+      animate={{ width: panelCollapsed ? 48 : expandedWidth }}
       transition={{ duration: 0.25, ease: easeInOut }}
     >
-      {!collapsed ? (
+      {!panelCollapsed ? (
         <div className="flex flex-col h-full bg-[#0d0d0d]">
-          {/* Header */}
-          <div className="h-14 px-4 border-b border-zinc-800 flex items-center gap-3 shrink-0">
-            <button
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-              onClick={() => setCollapsed(true)}
-            >
-              <PanelRightClose size={16} />
-            </button>
-
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="w-6 h-6 flex items-center justify-center rounded-md bg-zinc-800 border border-zinc-700">
-                <Code2 size={12} className="text-zinc-300" />
-              </div>
-
-              <div className="text-[13px] font-medium text-zinc-100 truncate">
-                {artifact?.title}
-              </div>
-            </div>
-
-            {!isPDF && tab === 'code' && (
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg"
-              >
-                {copied ? <Check size={15} /> : <Copy size={15} />}
-              </button>
-            )}
-
-            {((!isPDF && tab === 'code') || isPDF || isPPT) && (
-              <button
-                onClick={handleDownload}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg"
-              >
-                <Download size={15} />
-              </button>
-            )}
-
-            {canPreview && !isPDF && (
-              <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-lg">
+          {!artifact ? (
+            // Fallback: nothing currently open, browse all artifacts
+            // generated so far in this conversation.
+            <>
+              <div className="h-14 px-4 border-b border-zinc-800 flex items-center gap-3 shrink-0">
                 <button
-                  onClick={() => setTab('code')}
-                  className={`px-2.5 py-1 text-[11px] rounded-md ${
-                    tab === 'code'
-                      ? 'bg-zinc-100 text-zinc-900'
-                      : 'text-zinc-400 hover:text-zinc-100'
-                  }`}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                  onClick={() => dispatch(setPanelCollapsed(true))}
                 >
-                  <Code2 size={11} /> Code
+                  <PanelRightClose size={16} />
                 </button>
 
+                <span className="text-[13px] font-medium text-zinc-100 flex-1">
+                  Artifacts
+                </span>
+
+                {allArtifacts.length > 0 && (
+                  <button
+                    onClick={handleDownloadAll}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg"
+                  >
+                    <Download size={14} /> Download all
+                  </button>
+                )}
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+                {allArtifacts.length === 0 ? (
+                  <div className="text-zinc-500 text-[13px] text-center py-10">
+                    No artifacts yet.
+                  </div>
+                ) : (
+                  allArtifacts.map((a) => {
+                    const Icon = artifactIcon(a.type);
+                    return (
+                      <button
+                        key={a.id}
+                        onClick={() => dispatch(setArtifacts([a]))}
+                        className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-left"
+                      >
+                        <div className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg bg-zinc-800 border border-zinc-700">
+                          <Icon size={15} className="text-zinc-300" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[13px] text-zinc-100 truncate">
+                            {a.title}
+                          </div>
+                          <div className="text-[11px] text-zinc-500">
+                            {artifactLabel(a)}
+                          </div>
+                        </div>
+                        <ChevronRight
+                          size={15}
+                          className="text-zinc-600 shrink-0"
+                        />
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Header */}
+              <div className="h-14 px-4 border-b border-zinc-800 flex items-center gap-3 shrink-0">
                 <button
-                  onClick={() => setTab('preview')}
-                  className={`px-2.5 py-1 text-[11px] rounded-md ${
-                    tab === 'preview'
-                      ? 'bg-zinc-100 text-zinc-900'
-                      : 'text-zinc-400 hover:text-zinc-100'
-                  }`}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                  onClick={() => dispatch(setPanelCollapsed(true))}
                 >
-                  <Eye size={11} /> Preview
+                  <PanelRightClose size={16} />
+                </button>
+
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="w-6 h-6 flex items-center justify-center rounded-md bg-zinc-800 border border-zinc-700">
+                    <Code2 size={12} className="text-zinc-300" />
+                  </div>
+
+                  <div className="text-[13px] font-medium text-zinc-100 truncate">
+                    {artifact?.title}
+                  </div>
+                </div>
+
+                {!isPDF && tab === 'code' && (
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg"
+                  >
+                    {copied ? <Check size={15} /> : <Copy size={15} />}
+                  </button>
+                )}
+
+                {((!isPDF && tab === 'code') || isPDF || isPPT) && (
+                  <button
+                    onClick={handleDownload}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg"
+                  >
+                    <Download size={15} />
+                  </button>
+                )}
+
+                {canPreview && !isPDF && (
+                  <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-lg">
+                    <button
+                      onClick={() => setTab('code')}
+                      className={`px-2.5 py-1 text-[11px] rounded-md ${
+                        tab === 'code'
+                          ? 'bg-zinc-100 text-zinc-900'
+                          : 'text-zinc-400 hover:text-zinc-100'
+                      }`}
+                    >
+                      <Code2 size={11} /> Code
+                    </button>
+
+                    <button
+                      onClick={() => setTab('preview')}
+                      className={`px-2.5 py-1 text-[11px] rounded-md ${
+                        tab === 'preview'
+                          ? 'bg-zinc-100 text-zinc-900'
+                          : 'text-zinc-400 hover:text-zinc-100'
+                      }`}
+                    >
+                      <Eye size={11} /> Preview
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleCloseArtifact}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                >
+                  <X size={16} />
                 </button>
               </div>
-            )}
-          </div>
 
-          {tab === 'code' && !isPDF && (
-            <div className="flex border-b border-zinc-800 overflow-x-auto">
-              {artifact.files?.map((f, index) => (
-                <button
-                  key={f.name}
-                  onClick={() => setActiveFile(index)}
-                  className={`px-4 py-2.5 text-[11px] border-r border-zinc-800 ${
-                    activeFile === index
-                      ? 'text-zinc-100'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  {f.name}
-                </button>
-              ))}
-            </div>
+              {tab === 'code' && !isPDF && (
+                <div className="flex border-b border-zinc-800 overflow-x-auto">
+                  {artifact.files?.map((f, index) => (
+                    <button
+                      key={f.name}
+                      onClick={() => setActiveFile(index)}
+                      className={`px-4 py-2.5 text-[11px] border-r border-zinc-800 ${
+                        activeFile === index
+                          ? 'text-zinc-100'
+                          : 'text-zinc-500 hover:text-zinc-300'
+                      }`}
+                    >
+                      {f.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex-1 overflow-hidden">
+                {isPDF ? (
+                  <PdfViewer fileId={pdfFileId} />
+                ) : canPreview && tab === 'preview' ? (
+                  <iframe
+                    title="preview"
+                    srcDoc={previewDoc}
+                    sandbox="allow-scripts"
+                    className="w-full h-full bg-white"
+                  />
+                ) : (
+                  <Editor
+                    theme="vs-dark"
+                    language={detectLanguage(file?.name || '')}
+                    value={file?.content || ''}
+                    options={{
+                      readOnly: true,
+                      minimap: { enabled: false },
+                      fontSize: 13,
+                      wordWrap: 'on',
+                      automaticLayout: true,
+                      scrollBeyondLastLine: false,
+                      padding: { top: 16 },
+                      lineNumbers: 'on',
+                      renderLineHighlight: 'none',
+                    }}
+                  />
+                )}
+              </div>
+            </>
           )}
-
-          <div className="flex-1 overflow-hidden">
-            {isPDF ? (
-              <PdfViewer fileId={pdfFileId} />
-            ) : canPreview && tab === 'preview' ? (
-              <iframe
-                title="preview"
-                srcDoc={previewDoc}
-                sandbox="allow-scripts"
-                className="w-full h-full bg-white"
-              />
-            ) : (
-              <Editor
-                theme="vs-dark"
-                language={detectLanguage(file?.name || '')}
-                value={file?.content || ''}
-                options={{
-                  readOnly: true,
-                  minimap: { enabled: false },
-                  fontSize: 13,
-                  wordWrap: 'on',
-                  automaticLayout: true,
-                  scrollBeyondLastLine: false,
-                  padding: { top: 16 },
-                  lineNumbers: 'on',
-                  renderLineHighlight: 'none',
-                }}
-              />
-            )}
-          </div>
         </div>
       ) : (
         <div className="hidden lg:flex h-full border-l border-zinc-800 bg-[#0d0d0d] flex-col items-center py-4 gap-3">
           <button
-            onClick={() => setCollapsed(false)}
+            onClick={() => dispatch(setPanelCollapsed(false))}
             className="text-zinc-400 hover:text-zinc-100"
           >
             <PanelRightOpen size={16} />
@@ -388,7 +527,7 @@ const Artifact = () => {
             className="text-[10px] text-zinc-600 tracking-widest uppercase"
             style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
           >
-            {artifact?.title}
+            {artifact?.title || 'Artifacts'}
           </div>
         </div>
       )}
