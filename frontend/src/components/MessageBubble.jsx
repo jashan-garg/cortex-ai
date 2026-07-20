@@ -14,7 +14,7 @@ import {
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useDispatch } from 'react-redux';
-import { openArtifactPanel } from '../redux/messageSlice.js'; // adjust path to your actual slice location
+import { openArtifactPanel } from '../redux/messageSlice.js';
 
 const COLLAPSED_MAX_HEIGHT = 220;
 

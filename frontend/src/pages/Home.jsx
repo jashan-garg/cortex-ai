@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setUserdata } from '../redux/userSlice.js';
 import SideBar from '../components/SideBar.jsx';
 import ChatArea from '../components/ChatArea.jsx';
-import Artifact from '../components/Artifact.jsx';
+import Artifact from '../components/Artifact/Artifact.jsx';
 
 const Home = () => {
   const { user } = useSelector((state) => state.user);
