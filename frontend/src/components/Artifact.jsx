@@ -50,7 +50,6 @@ const PdfViewer = ({
 
     let cancelled = false;
 
-    // Reset state for new file
     setNumPages(null);
     setCurrentPage(1);
     setError(null);
@@ -208,13 +207,7 @@ const Artifact = () => {
     if (artifacts?.length) setPanelOpen(true);
   }, [artifacts]);
 
-  // Reset per-file UI when the active artifact changes
-  useEffect(() => {
-    setActiveFile(0);
-    setTab('code');
-    setCopied(false);
-  }, [artifacts?.[0]?.id]);
-
+  // Derive all artifacts in the current conversation
   const allArtifacts = useMemo(() => {
     const map = new Map();
     messages?.forEach((msg) => {
@@ -225,6 +218,26 @@ const Artifact = () => {
     return Array.from(map.values());
   }, [messages]);
 
+  // When switching conversations:
+  // - keep panel open if the new convo has artifacts
+  // - hide panel completely if the new convo has no artifacts
+  useEffect(() => {
+    dispatch(setArtifacts([]));
+
+    if (allArtifacts.length > 0) {
+      setPanelOpen(true);
+    } else {
+      setPanelOpen(false);
+    }
+  }, [selectedConversation?._id, allArtifacts.length, dispatch]);
+
+  // Reset per-file UI when the active artifact changes
+  useEffect(() => {
+    setActiveFile(0);
+    setTab('code');
+    setCopied(false);
+  }, [artifacts?.[0]?.id]);
+
   if (!panelOpen || !selectedConversation) return null;
 
   const artifact = artifacts?.[0] || null;
@@ -233,13 +246,11 @@ const Artifact = () => {
   const isPDF = artifact?.type === 'PDF';
   const isPPT = artifact?.type === 'PPT';
 
-  // For viewing we always need the PDF representation
   const viewFile =
     artifact?.files?.find((f) => f.name?.endsWith('.pdf')) ||
     artifact?.files?.[0];
   const docFileId = viewFile?.content;
 
-  // For PPT downloads we need the original .pptx file
   const pptxFile =
     artifact?.files?.find((f) => f.name?.endsWith('.pptx')) ||
     artifact?.files?.[0];
@@ -450,7 +461,6 @@ const Artifact = () => {
                   </div>
                 </div>
 
-                {/* Copy — code only */}
                 {!isPDF && !isPPT && tab === 'code' && (
                   <button
                     onClick={handleCopy}
@@ -460,7 +470,6 @@ const Artifact = () => {
                   </button>
                 )}
 
-                {/* Download — code (code tab), PDF, or PPT */}
                 {((!isPDF && !isPPT && tab === 'code') || isPDF || isPPT) && (
                   <button
                     onClick={handleDownload}
@@ -470,7 +479,6 @@ const Artifact = () => {
                   </button>
                 )}
 
-                {/* Code / Preview toggle — code only */}
                 {canPreview && !isPDF && !isPPT && (
                   <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-lg">
                     <button
@@ -505,7 +513,6 @@ const Artifact = () => {
                 </button>
               </div>
 
-              {/* File tabs — code only */}
               {tab === 'code' && !isPDF && !isPPT && (
                 <div className="flex border-b border-zinc-800 overflow-x-auto">
                   {artifact.files?.map((f, index) => (

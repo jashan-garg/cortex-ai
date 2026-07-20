@@ -22,9 +22,15 @@ import {
 } from '../redux/conversationSlice.js';
 import { updateConversation } from '../features/updateConversation.js';
 
+const makeId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
 const ChatInput = () => {
   const [selectedAgent, setSelectedAgent] = useState('Auto');
   const [isFocused, setIsFocused] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const textareaRef = useRef(null);
 
@@ -52,7 +58,7 @@ const ChatInput = () => {
 
   const handleSendMessage = async () => {
     const prompt = value.trim();
-    if (!prompt) return;
+    if (!prompt || sending) return;
 
     let conversation = selectedConversation;
 
@@ -82,28 +88,59 @@ const ChatInput = () => {
       agent: selectedAgent.toLowerCase(),
     };
 
-    dispatch(addMessage({ role: 'user', content: prompt }));
-    dispatch(setDraft(''));
-
-    const data = await sendMessage(payload);
-    dispatch(setArtifacts(data.artifacts || []));
-
-    const cleanAnswer =
-      typeof data.answer === 'string'
-        ? data.answer.replace(/^```[\s\S]*?```$/, (match) =>
-            match.replace(/```/g, '')
-          )
-        : '';
-
+    // Optimistic user message
     dispatch(
       addMessage({
-        role: 'assistant',
-        content: cleanAnswer,
-        images: data.images,
+        _id: makeId(),
+        role: 'user',
+        content: prompt,
+        images: [],
+        artifacts: [],
       })
     );
+    dispatch(setDraft(''));
+    setSending(true);
 
-    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+    try {
+      const data = await sendMessage(payload);
+
+      // Open right panel if artifacts came back
+      if (data.artifacts?.length) {
+        dispatch(setArtifacts(data.artifacts));
+      }
+
+      const cleanAnswer =
+        typeof data.answer === 'string'
+          ? data.answer.replace(/^```[\s\S]*?```$/, (match) =>
+              match.replace(/```/g, '')
+            )
+          : '';
+
+      // Assistant message WITH artifacts so the chip renders immediately
+      dispatch(
+        addMessage({
+          _id: makeId(),
+          role: 'assistant',
+          content: cleanAnswer,
+          images: data.images || [],
+          artifacts: data.artifacts || [],
+        })
+      );
+    } catch (err) {
+      console.error('Send failed:', err);
+      dispatch(
+        addMessage({
+          _id: makeId(),
+          role: 'assistant',
+          content: 'Something went wrong. Please try again.',
+          images: [],
+          artifacts: [],
+        })
+      );
+    } finally {
+      setSending(false);
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+    }
   };
 
   const agents = [
@@ -136,6 +173,7 @@ const ChatInput = () => {
               placeholder="Ask anything"
               rows={2}
               value={value}
+              disabled={sending}
               onChange={(e) => {
                 dispatch(setDraft(e.target.value));
                 autoResize();
@@ -148,12 +186,15 @@ const ChatInput = () => {
                   handleSendMessage();
                 }
               }}
-              className="w-full bg-transparent outline-none resize-none text-[15px] text-neutral-200 placeholder:text-neutral-500 leading-relaxed px-1 overflow-hidden"
+              className="w-full bg-transparent outline-none resize-none text-[15px] text-neutral-200 placeholder:text-neutral-500 leading-relaxed px-1 overflow-hidden disabled:opacity-50"
             />
 
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-                <button className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-white/5 transition">
+                <button
+                  type="button"
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-white/5 transition"
+                >
                   <Paperclip size={16} />
                 </button>
 
@@ -166,8 +207,10 @@ const ChatInput = () => {
                   return (
                     <button
                       key={agent.id}
+                      type="button"
+                      disabled={sending}
                       onClick={() => setSelectedAgent(agent.label)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12px] transition ${
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12px] transition disabled:opacity-40 ${
                         isActive
                           ? 'bg-white/10 text-white'
                           : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
@@ -181,15 +224,19 @@ const ChatInput = () => {
               </div>
 
               <div className="flex items-center gap-1">
-                <button className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-white/5 transition">
+                <button
+                  type="button"
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-white/5 transition"
+                >
                   <Mic size={16} />
                 </button>
 
                 <button
-                  disabled={!value.trim()}
+                  type="button"
+                  disabled={!value.trim() || sending}
                   onClick={handleSendMessage}
                   className={`w-8 h-8 flex items-center justify-center rounded-full transition ${
-                    value.trim()
+                    value.trim() && !sending
                       ? 'bg-white text-black hover:bg-neutral-200'
                       : 'bg-white/8 text-white/30 cursor-not-allowed'
                   }`}

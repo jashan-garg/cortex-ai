@@ -15,6 +15,14 @@ const messageSlice = createSlice({
     addMessage: (state, action) => {
       state.messages.push(action.payload);
     },
+
+    updateMessage: (state, action) => {
+      const { _id, ...updates } = action.payload;
+      const idx = state.messages.findIndex((m) => m._id === _id);
+      if (idx !== -1) {
+        Object.assign(state.messages[idx], updates);
+      }
+    },
     setDraft: (state, action) => {
       state.draft = action.payload;
     },
@@ -34,9 +42,11 @@ const messageSlice = createSlice({
 export const {
   setMessages,
   addMessage,
+  updateMessage,
   setDraft,
   setArtifacts,
   setPanelCollapsed,
   openArtifactPanel,
 } = messageSlice.actions;
+
 export default messageSlice.reducer;
