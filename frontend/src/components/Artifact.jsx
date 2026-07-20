@@ -184,10 +184,6 @@ const Artifact = () => {
   const [tab, setTab] = useState('code');
   const [activeFile, setActiveFile] = useState(0);
   const [copied, setCopied] = useState(false);
-
-  // Latches open once an artifact has been opened, so clearing the
-  // current selection (via the X button) shows the fallback list
-  // instead of unmounting the whole panel.
   const [panelOpen, setPanelOpen] = useState(Boolean(artifacts?.length));
 
   useEffect(() => {
