@@ -1,9 +1,16 @@
 import { Router } from 'express';
-import { login, logout } from '../controllers/auth.controller.js';
+import {
+  deductCredits,
+  login,
+  logout,
+  updateUserPayment,
+} from '../controllers/auth.controller.js';
 
 const router = Router();
 
 router.post('/login', login);
 router.get('/logout', logout);
+router.post('/update-plan', updateUserPayment);
+router.post('/deduct-credits', deductCredits);
 
 export default router;

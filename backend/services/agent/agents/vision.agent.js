@@ -1,5 +1,6 @@
 import { getModel } from '../config/llmModels.js';
 import axios from 'axios';
+import { deductCredits } from '../utils/deductCredits.js';
 
 export const visionAgent = async (state) => {
   const llm = await getModel('image');
@@ -31,7 +32,7 @@ export const visionAgent = async (state) => {
         aiResponse: `No image found for "${query}".`,
       };
     }
-
+    await deductCredits(state.userId, 'vision');
     return {
       ...state,
       images: [photo.urls.regular],

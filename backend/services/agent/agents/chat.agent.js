@@ -5,6 +5,7 @@ import {
 } from '@langchain/core/messages';
 import { getModel } from '../config/llmModels.js';
 import { getMemory } from '../config/memory.js';
+import { deductCredits } from '../utils/deductCredits.js';
 
 export const chatAgent = async (state) => {
   try {
@@ -44,15 +45,34 @@ export const chatAgent = async (state) => {
     const messages = [new SystemMessage(systemPrompt)];
 
     history.forEach((msg) => {
-      if (msg.role == 'user') messages.push(new HumanMessage(msg.content));
-      else messages.push(new AIMessage(msg.content));
+      // Skip null/undefined messages or messages without content
+      if (!msg || msg.content == null) return;
+
+      const content =
+        typeof msg.content === 'string' ? msg.content : String(msg.content);
+
+      if (msg.role === 'user') {
+        messages.push(new HumanMessage(content));
+      } else if (msg.role === 'assistant' || msg.role === 'ai') {
+        messages.push(new AIMessage(content));
+      }
     });
 
     messages.push(new HumanMessage(state.prompt));
     const response = await llm.invoke(messages);
-    return { ...state, aiResponse: response.content };
+
+    const deductRes = await deductCredits(state.userId, 'chat');
+
+    return {
+      ...state,
+      aiResponse: response.content,
+      credits: deductRes?.credits, // Pass credits through graph state
+    };
   } catch (error) {
     console.log(error);
-    return { ...state, aiResponse: `Some error occured, please try again.` };
+    return {
+      ...state,
+      aiResponse: `Some error occured, please try again.`,
+    };
   }
 };

@@ -1,4 +1,5 @@
 import { getModel } from '../config/llmModels.js';
+import { deductCredits } from '../utils/deductCredits.js';
 
 const cleanJson = (text) => {
   return text
@@ -34,7 +35,7 @@ export const codingAgent = async (state) => {
 
   const intent = intentRes.content.trim();
   if (intent == 'CODE_GENERATION') {
-    const prompt = `You are CortexAI Coding Agent, made by Jashan Garg. Generate the requested project.
+    const prompt = `You are Cortex AI Coding Agent, made by Jashan Garg. Generate the requested project.
       Default stack:
       - HTML
       - CSS
@@ -89,6 +90,7 @@ export const codingAgent = async (state) => {
 
     const res = await llm.invoke(prompt);
     const data = safeParse(res.content);
+    await deductCredits(state.userId, 'coding');
     return {
       ...state,
       aiResponse: 'Code generated successfully!',
@@ -102,9 +104,9 @@ export const codingAgent = async (state) => {
       ],
     };
   }
-
+  await deductCredits(state.userId, 'coding');
   const res = await llm.invoke(` 
-    You are CortexAI Coding Agent, made by Jashan Garg.
+    You are Cortex AI Coding Agent, made by Jashan Garg.
     The user's request is: ${intent}
     Return Markdown only.
     Never generate project files.

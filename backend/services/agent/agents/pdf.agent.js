@@ -1,4 +1,5 @@
 import { getModel } from '../config/llmModels.js';
+import { deductCredits } from '../utils/deductCredits.js';
 import { generatePdf } from '../utils/generatePdf.js';
 import { getFromS3 } from '../utils/getFromS3.js';
 import { uploadToS3 } from '../utils/uploadToS3.js';
@@ -51,6 +52,7 @@ Topic: ${state.prompt}
 
     await uploadToS3(pdfBuffer, filename, 'application/pdf');
 
+    await deductCredits(state.userId, 'pdf');
     return {
       ...state,
       aiResponse: `PDF generated successfully`,

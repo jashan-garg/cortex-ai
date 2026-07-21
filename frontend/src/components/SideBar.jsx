@@ -1,10 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import {
+  Coins,
   LogOut,
   MessageSquare,
   PanelLeftIcon,
   PanelRight,
-  // Search,
   SquarePen,
   User,
 } from 'lucide-react';
@@ -12,14 +12,13 @@ import { useEffect, useState } from 'react';
 import { getConversations } from '../features/getConversations.js';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  // addConversation,
   setConversations,
   setSelectedConversation,
 } from '../redux/conversationSlice.js';
-// import { createConversation } from '../features/createConversation.js';
 import logout from '../features/logout.js';
 import { setUserdata } from '../redux/userSlice.js';
 import { setArtifacts } from '../redux/messageSlice.js';
+import BillingDrawer from './BillingDrawer.jsx';
 
 const SideBar = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -29,6 +28,7 @@ const SideBar = () => {
   );
   const { user } = useSelector((state) => state.user);
   const [imageError, setImageError] = useState(false);
+  const [showBilling, setShowBilling] = useState(false);
 
   useEffect(() => {
     const getConv = async () => {
@@ -41,14 +41,6 @@ const SideBar = () => {
     };
     getConv();
   }, [user?._id]);
-
-  // const handleCreateConversation = async () => {
-  //     const data = await createConversation();
-  //     if (data) {
-  //         dispatch(addConversation(data));
-  //         dispatch(setSelectedConversation(data));
-  //     }
-  // };
 
   if (collapsed)
     return (
@@ -137,10 +129,6 @@ const SideBar = () => {
             <SquarePen size={16} className="text-slate-400" />
             New chat
           </button>
-          {/* <button className="w-full flex items-center gap-2.5 text-[13.5px] font-medium text-slate-200 rounded-lg px-2.5 py-2 border-none bg-transparent cursor-pointer hover:bg-white/8 transition-colors duration-150">
-                        <Search size={16} className="text-slate-400" />
-                        Search chats
-                    </button> */}
         </div>
 
         {/* convo list */}
@@ -199,8 +187,17 @@ const SideBar = () => {
                 <p className="text-[13px] font-medium text-slate-200 truncate">
                   {user?.name || 'Loading...'}
                 </p>
-                <p className="text-[11px] text-slate-600">Free plan</p>
+                <p className="text-[11px] text-slate-600 capitalize">
+                  {user?.plan ?? 'Free'} Plan
+                </p>
               </div>
+
+              <button
+                className="flex items-center justify-center w-7 h-7 rounded-md border-none bg-transparent text-slate-500 cursor-pointer hover:bg-white/10 hover:text-slate-300 transition-colors duration-150"
+                onClick={() => setShowBilling(true)}
+              >
+                <Coins size={15} />
+              </button>
 
               <button
                 className="flex items-center justify-center w-7 h-7 rounded-md border-none bg-transparent text-slate-500 cursor-pointer hover:bg-white/10 hover:text-slate-300 transition-colors duration-150"
@@ -216,6 +213,8 @@ const SideBar = () => {
           )}
         </div>
       </div>
+
+      <BillingDrawer open={showBilling} onClose={() => setShowBilling(false)} />
     </div>
   );
 };

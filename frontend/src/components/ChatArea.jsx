@@ -23,8 +23,6 @@ const ChatArea = () => {
         }
 
         const data = await getMessages(selectedConversation?._id);
-
-        // Ensure messages is always an array
         const messages = Array.isArray(data) ? data : [];
 
         dispatch(setMessages(messages));

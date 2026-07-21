@@ -2,14 +2,15 @@ import { MessageSquare } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setDraft } from '../redux/messageSlice.js';
 import MessageBubble from './MessageBubble.jsx';
+import TypingIndicator from './TypingIndicator.jsx';
 
 const MessageList = () => {
   const dispatch = useDispatch();
   const { selectedConversation } = useSelector((state) => state.conversation);
-  const { messages } = useSelector((state) => state.message);
+  const { messages, isSending } = useSelector((state) => state.message);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-5 scrollbar-none [&::-webkit-scrollbar]:hidden bg-[#0d0d0d]">
+    <div className="flex-1 overflow-y-auto p-6 scrollbar-none [&::-webkit-scrollbar]:hidden bg-[#0d0d0d]">
       {messages.length == 0 || !selectedConversation ? (
         <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 mb-1">
@@ -46,9 +47,9 @@ const MessageList = () => {
           </div>
         </div>
       ) : (
-        <div className="">
+        <div className="max-w-3xl mx-auto space-y-5">
           {messages?.map((msg) => (
-            <div key={msg._id} className="">
+            <div key={msg._id}>
               <MessageBubble
                 role={msg?.role}
                 content={msg?.content}
@@ -57,6 +58,7 @@ const MessageList = () => {
               />
             </div>
           ))}
+          {isSending && <TypingIndicator />}
         </div>
       )}
     </div>

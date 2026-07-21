@@ -7,6 +7,7 @@ const messageSlice = createSlice({
     artifacts: [],
     draft: '',
     panelCollapsed: false,
+    isSending: false,
   },
   reducers: {
     setMessages: (state, action) => {
@@ -15,7 +16,6 @@ const messageSlice = createSlice({
     addMessage: (state, action) => {
       state.messages.push(action.payload);
     },
-
     updateMessage: (state, action) => {
       const { _id, ...updates } = action.payload;
       const idx = state.messages.findIndex((m) => m._id === _id);
@@ -36,6 +36,9 @@ const messageSlice = createSlice({
       state.artifacts = action.payload;
       state.panelCollapsed = false;
     },
+    setSending: (state, action) => {
+      state.isSending = action.payload;
+    },
   },
 });
 
@@ -47,6 +50,7 @@ export const {
   setArtifacts,
   setPanelCollapsed,
   openArtifactPanel,
+  setSending,
 } = messageSlice.actions;
 
 export default messageSlice.reducer;

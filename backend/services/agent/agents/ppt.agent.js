@@ -1,4 +1,5 @@
 import { getModel } from '../config/llmModels.js';
+import { deductCredits } from '../utils/deductCredits.js';
 import { generatePresentationPdf } from '../utils/generatePresentationPdf.js';
 import { uploadToS3 } from '../utils/uploadToS3.js';
 
@@ -63,10 +64,10 @@ Topic: ${state.prompt}
       .slice(2)}.pdf`;
 
     await uploadToS3(pdfBuffer, filename, 'application/pdf');
-
+    await deductCredits(state.userId, 'ppt');
     return {
       ...state,
-      aiResponse: `Presentation PDF generated successfully`,
+      aiResponse: `Presentation generated successfully`,
       artifacts: [
         {
           id: Date.now(),
@@ -77,8 +78,7 @@ Topic: ${state.prompt}
       ],
     };
   } catch (error) {
-    console.error('pptAgent failed:', error);
-
+    console.error('ppt Agent failed:', error);
     return {
       ...state,
       aiResponse: `Presentation generation failed`,

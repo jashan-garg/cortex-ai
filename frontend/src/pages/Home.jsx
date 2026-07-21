@@ -51,10 +51,7 @@ const Home = () => {
 
             <button
               onClick={googleLogin}
-              className="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg text-sm font-medium 
-                            bg-[#2b2b2b] hover:bg-[#343434] active:bg-[#2f2f2f] 
-                            text-neutral-200 
-                            transition-colors duration-150 cursor-pointer"
+              className="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg text-sm font-medium bg-[#2b2b2b] hover:bg-[#343434] active:bg-[#2f2f2f] text-neutral-200 transition-colors duration-150 cursor-pointer"
             >
               <FcGoogle size={18} />
               <span>Continue with Google</span>

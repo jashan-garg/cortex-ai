@@ -8,14 +8,19 @@ import { Readable } from 'stream';
 export const agent = async (req, res) => {
   try {
     const { prompt, conversationId, agent } = req.body;
-
+    const userId = req.headers['x-user-id'];
     await axios.post(`${process.env.CHAT_SERVICE}/save-message`, {
       conversationId,
       role: 'user',
       content: prompt,
     });
 
-    const result = await graph.invoke({ prompt, conversationId, agent });
+    const result = await graph.invoke({
+      prompt,
+      conversationId,
+      agent,
+      userId,
+    });
 
     await addMessage(conversationId, 'user', prompt);
     await addMessage(conversationId, 'assistant', result.aiResponse);
@@ -32,6 +37,7 @@ export const agent = async (req, res) => {
       answer: result?.aiResponse,
       images: result?.images,
       artifacts: result?.artifacts,
+      credits: result?.credits,
     });
   } catch (error) {
     console.error(error);
@@ -42,7 +48,6 @@ export const agent = async (req, res) => {
 export const getPdf = async (req, res) => {
   try {
     const { key } = req.params;
-    console.log('Fetching PDF key:', key);
 
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME,
@@ -50,17 +55,7 @@ export const getPdf = async (req, res) => {
     });
 
     const data = await s3.send(command);
-    console.log(
-      'S3 object loaded, ContentType:',
-      data.ContentType,
-      'ContentLength:',
-      data.ContentLength
-    );
-
-    if (!data.Body) {
-      console.log('Body missing');
-      return res.status(404).send('File not found');
-    }
+    if (!data.Body) return res.status(404).send('File not found');
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'inline');
@@ -79,47 +74,24 @@ export const getPdf = async (req, res) => {
 export const getPpt = async (req, res) => {
   try {
     const { key } = req.params;
-    console.log('Fetching PPT key:', key);
-
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: key,
     });
 
     const data = await s3.send(command);
-
-    console.log(
-      'S3 object loaded, ContentType:',
-      data.ContentType,
-      'ContentLength:',
-      data.ContentLength
-    );
-
-    if (!data.Body) {
-      console.log('Body missing');
-      return res.status(404).send('File not found');
-    }
-
-    /** ---------- HEADERS (IMPORTANT) ---------- */
+    if (!data.Body) return res.status(404).send('File not found');
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     );
 
-    // PPT usually downloads instead of inline view
     res.setHeader('Content-Disposition', `attachment; filename="${key}"`);
+    if (data.ContentLength) res.setHeader('Content-Length', data.ContentLength);
 
-    if (data.ContentLength) {
-      res.setHeader('Content-Length', data.ContentLength);
-    }
-
-    /** ---------- STREAM ---------- */
     const stream = Readable.from(data.Body);
-
     stream.on('error', (err) => console.error('Stream error:', err));
-
     stream.on('end', () => console.log('PPT stream ended'));
-
     stream.pipe(res);
   } catch (err) {
     console.error('PPT fetch failed:', err);

@@ -14,12 +14,18 @@ import { useState, useRef } from 'react';
 import sendMessage from '../features/sendMessage.js';
 import { createConversation } from '../features/createConversation.js';
 import { useDispatch, useSelector } from 'react-redux';
-import { addMessage, setDraft, setArtifacts } from '../redux/messageSlice.js';
+import {
+  addMessage,
+  setDraft,
+  setArtifacts,
+  setSending,
+} from '../redux/messageSlice.js';
 import {
   addConversation,
   setConvTitle,
   setSelectedConversation,
 } from '../redux/conversationSlice.js';
+import { setCredits } from '../redux/userSlice.js'; // <-- ADD THIS (adjust path)
 import { updateConversation } from '../features/updateConversation.js';
 
 const makeId = () =>
@@ -30,13 +36,12 @@ const makeId = () =>
 const ChatInput = () => {
   const [selectedAgent, setSelectedAgent] = useState('Auto');
   const [isFocused, setIsFocused] = useState(false);
-  const [sending, setSending] = useState(false);
 
   const textareaRef = useRef(null);
 
   const { selectedConversation } = useSelector((state) => state.conversation);
-  const { draft } = useSelector((state) => state.message);
-  const dispatch = useDispatch();
+  const { draft, isSending } = useSelector((state) => state.message);
+  const dispatch = useDispatch(); // already here
 
   const value = draft || '';
 
@@ -58,7 +63,7 @@ const ChatInput = () => {
 
   const handleSendMessage = async () => {
     const prompt = value.trim();
-    if (!prompt || sending) return;
+    if (!prompt || isSending) return;
 
     let conversation = selectedConversation;
 
@@ -99,12 +104,16 @@ const ChatInput = () => {
       })
     );
     dispatch(setDraft(''));
-    setSending(true);
+    dispatch(setSending(true));
 
     try {
       const data = await sendMessage(payload);
 
-      // Open right panel if artifacts came back
+      // <-- ADD THIS LINE
+      if (data.credits !== undefined) {
+        dispatch(setCredits(data.credits));
+      }
+
       if (data.artifacts?.length) {
         dispatch(setArtifacts(data.artifacts));
       }
@@ -116,7 +125,6 @@ const ChatInput = () => {
             )
           : '';
 
-      // Assistant message WITH artifacts so the chip renders immediately
       dispatch(
         addMessage({
           _id: makeId(),
@@ -138,7 +146,7 @@ const ChatInput = () => {
         })
       );
     } finally {
-      setSending(false);
+      dispatch(setSending(false));
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
     }
   };
@@ -155,7 +163,6 @@ const ChatInput = () => {
 
   return (
     <div className="relative">
-      {/* GRADIENT FADE */}
       <div className="absolute -top-7.5 left-0 w-full h-7.5 bg-linear-to-b from-transparent to-[#0d0d0d] pointer-events-none" />
 
       <div className="px-4 pb-6 pt-3 bg-[#0d0d0d]">
@@ -173,7 +180,7 @@ const ChatInput = () => {
               placeholder="Ask anything"
               rows={2}
               value={value}
-              disabled={sending}
+              disabled={isSending}
               onChange={(e) => {
                 dispatch(setDraft(e.target.value));
                 autoResize();
@@ -208,7 +215,7 @@ const ChatInput = () => {
                     <button
                       key={agent.id}
                       type="button"
-                      disabled={sending}
+                      disabled={isSending}
                       onClick={() => setSelectedAgent(agent.label)}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12px] transition disabled:opacity-40 ${
                         isActive
@@ -233,10 +240,10 @@ const ChatInput = () => {
 
                 <button
                   type="button"
-                  disabled={!value.trim() || sending}
+                  disabled={!value.trim() || isSending}
                   onClick={handleSendMessage}
                   className={`w-8 h-8 flex items-center justify-center rounded-full transition ${
-                    value.trim() && !sending
+                    value.trim() && !isSending
                       ? 'bg-white text-black hover:bg-neutral-200'
                       : 'bg-white/8 text-white/30 cursor-not-allowed'
                   }`}

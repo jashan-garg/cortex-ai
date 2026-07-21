@@ -55,7 +55,7 @@ const ArtifactActions = ({
                 : 'text-zinc-400 hover:text-zinc-100'
             }`}
           >
-            <Code2 size={11} /> Code
+            <Code2 size={15} />
           </button>
 
           <button
@@ -66,7 +66,7 @@ const ArtifactActions = ({
                 : 'text-zinc-400 hover:text-zinc-100'
             }`}
           >
-            <Eye size={11} /> Preview
+            <Eye size={15} />
           </button>
         </div>
       )}
