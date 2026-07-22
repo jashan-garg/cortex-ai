@@ -133,12 +133,6 @@ const TypingIndicator = () => {
             {word}…
           </motion.span>
         </AnimatePresence>
-
-        <div className="flex items-center gap-1.5 pb-0.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce [animation-delay:-0.4s]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce [animation-delay:-0.2s]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" />
-        </div>
       </div>
     </div>
   );
