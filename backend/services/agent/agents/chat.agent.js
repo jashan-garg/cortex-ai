@@ -74,7 +74,7 @@ export const chatAgent = async (state) => {
     console.log(error);
     return {
       ...state,
-      aiResponse: `Some error occured, please try again.`,
+      aiResponse: `Error occured: ${error?.data?.message ?? 'Please try again.'}`,
     };
   }
 };
