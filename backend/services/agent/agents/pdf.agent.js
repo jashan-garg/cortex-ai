@@ -1,3 +1,4 @@
+import { checkLimit } from '../config/agentLimit.js';
 import { getModel } from '../config/llmModels.js';
 import { deductCredits } from '../utils/deductCredits.js';
 import { generatePdf } from '../utils/generatePdf.js';
@@ -21,6 +22,7 @@ const safeParse = (text) => {
 
 export const pdfAgent = async (state) => {
   try {
+    await checkLimit(state.userId, 'pdf');
     const llm = await getModel('pdf');
 
     const prompt = `

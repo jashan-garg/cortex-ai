@@ -8,11 +8,13 @@ const app = express();
 const PORT = process.env.PORT || 8003;
 
 app.use(express.json());
-app.use((req, res, next) => {
-  console.log('Incoming path:', req.method, req.originalUrl);
-  next();
-});
 app.use('/', router);
+
+app.use((err, req, res, next) => {
+  console.log(err);
+  if (err.status) return res.status(err.status).json(err.data);
+  return res.status(500).json(`Internal server error`);
+});
 
 app.get('/', (req, res) => {
   res.send('Agent server');

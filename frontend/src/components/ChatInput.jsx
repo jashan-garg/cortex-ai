@@ -6,7 +6,6 @@ import {
   Globe,
   ImageIcon,
   MessageSquare,
-  Mic,
   Paperclip,
   Presentation,
   X,
@@ -266,13 +265,6 @@ const ChatInput = () => {
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-white/5 transition"
-                >
-                  <Mic size={16} />
-                </button>
-
                 <button
                   type="button"
                   disabled={!value.trim() || isSending}

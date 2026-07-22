@@ -1,3 +1,4 @@
+import { checkLimit } from '../config/agentLimit.js';
 import { getModel } from '../config/llmModels.js';
 import { deductCredits } from '../utils/deductCredits.js';
 import { generatePresentationPdf } from '../utils/generatePresentationPdf.js';
@@ -20,6 +21,7 @@ const safeParse = (text) => {
 
 export const pptAgent = async (state) => {
   try {
+    await checkLimit(state.userId, 'ppt');
     const llm = await getModel('ppt');
 
     const prompt = `

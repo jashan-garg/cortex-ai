@@ -3,11 +3,17 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setDraft } from '../redux/messageSlice.js';
 import MessageBubble from './MessageBubble.jsx';
 import TypingIndicator from './TypingIndicator.jsx';
+import { useEffect, useRef } from 'react';
 
 const MessageList = () => {
   const dispatch = useDispatch();
   const { selectedConversation } = useSelector((state) => state.conversation);
   const { messages, isSending } = useSelector((state) => state.message);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isSending]);
 
   return (
     <div
@@ -63,6 +69,7 @@ const MessageList = () => {
             </div>
           ))}
           {isSending && <TypingIndicator />}
+          <div ref={bottomRef} />
         </div>
       )}
     </div>

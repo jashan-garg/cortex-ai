@@ -5,12 +5,14 @@ import { vectorStore } from '../config/vectorDb.js';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { getModel } from '../config/llmModels.js';
 import { deductCredits } from '../utils/deductCredits.js';
+import { checkLimit } from '../config/agentLimit.js';
 
 export const pdfRag = async (state) => {
   let collectionName; // <-- move outside try
   let store; // <-- move outside try
 
   try {
+    await checkLimit(state.userId, 'pdf');
     const buffer = fs.readFileSync(state?.file?.path);
     const pdf = new PDFParse({ data: buffer });
     const result = await pdf.getText();

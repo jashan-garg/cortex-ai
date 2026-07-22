@@ -1,9 +1,11 @@
 import { getModel } from '../config/llmModels.js';
 import axios from 'axios';
 import { deductCredits } from '../utils/deductCredits.js';
+import { checkLimit } from '../config/agentLimit.js';
 
 export const visionAgent = async (state) => {
-  const llm = await getModel('image');
+  await checkLimit(state.userId, 'vision');
+  const llm = await getModel('vision');
 
   const res = await llm.invoke(`
     Convert the user request into a concise Unsplash search query.

@@ -1,3 +1,4 @@
+import { checkLimit } from '../config/agentLimit.js';
 import { getModel } from '../config/llmModels.js';
 import { deductCredits } from '../utils/deductCredits.js';
 
@@ -18,6 +19,7 @@ const safeParse = (text) => {
 };
 
 export const codingAgent = async (state) => {
+  await checkLimit(state.userId, 'coding');
   const intentLlm = await getModel('intent');
   const llm = await getModel('coding');
   const intentRes = await intentLlm.invoke(`

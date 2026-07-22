@@ -5,7 +5,7 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { s3 } from '../config/s3.js';
 import { Readable } from 'stream';
 
-export const agent = async (req, res) => {
+export const agent = async (req, res, next) => {
   try {
     const { prompt, conversationId, agent } = req.body;
     const file = req.file;
@@ -42,8 +42,7 @@ export const agent = async (req, res) => {
       credits: result?.credits,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: `Error: ${error.message}` });
+    next(error);
   }
 };
 
