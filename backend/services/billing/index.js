@@ -7,10 +7,6 @@ const app = express();
 const PORT = process.env.PORT || 8004;
 
 app.use(express.json());
-app.use((req, res, next) => {
-  console.log('Incoming path:', req.method, req.originalUrl);
-  next();
-});
 app.use('/', router);
 
 app.get('/', (req, res) => {
