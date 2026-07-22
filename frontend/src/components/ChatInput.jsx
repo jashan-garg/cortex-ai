@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import {
   ArrowUp,
   Code2,
@@ -8,9 +9,10 @@ import {
   Mic,
   Paperclip,
   Presentation,
+  X,
   Zap,
 } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import sendMessage from '../features/sendMessage.js';
 import { createConversation } from '../features/createConversation.js';
 import { useDispatch, useSelector } from 'react-redux';
@@ -25,7 +27,7 @@ import {
   setConvTitle,
   setSelectedConversation,
 } from '../redux/conversationSlice.js';
-import { setCredits } from '../redux/userSlice.js'; // <-- ADD THIS (adjust path)
+import { setCredits } from '../redux/userSlice.js';
 import { updateConversation } from '../features/updateConversation.js';
 
 const makeId = () =>
@@ -36,14 +38,18 @@ const makeId = () =>
 const ChatInput = () => {
   const [selectedAgent, setSelectedAgent] = useState('Auto');
   const [isFocused, setIsFocused] = useState(false);
-
   const textareaRef = useRef(null);
-
   const { selectedConversation } = useSelector((state) => state.conversation);
   const { draft, isSending } = useSelector((state) => state.message);
-  const dispatch = useDispatch(); // already here
+  const dispatch = useDispatch();
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileRef = useRef(null);
 
   const value = draft || '';
+
+  useEffect(() => {
+    setSelectedFile(null);
+  }, [selectedConversation]);
 
   const autoResize = () => {
     const el = textareaRef.current;
@@ -87,13 +93,12 @@ const ChatInput = () => {
       );
     }
 
-    const payload = {
-      prompt,
-      conversationId: conversation._id,
-      agent: selectedAgent.toLowerCase(),
-    };
+    const formData = new FormData();
+    formData.append('prompt', prompt);
+    formData.append('conversationId', conversation._id);
+    formData.append('agent', selectedAgent.toLowerCase());
+    formData.append('file', selectedFile);
 
-    // Optimistic user message
     dispatch(
       addMessage({
         _id: makeId(),
@@ -107,16 +112,9 @@ const ChatInput = () => {
     dispatch(setSending(true));
 
     try {
-      const data = await sendMessage(payload);
-
-      // <-- ADD THIS LINE
-      if (data.credits !== undefined) {
-        dispatch(setCredits(data.credits));
-      }
-
-      if (data.artifacts?.length) {
-        dispatch(setArtifacts(data.artifacts));
-      }
+      const data = await sendMessage(formData);
+      if (data.credits !== undefined) dispatch(setCredits(data.credits));
+      if (data.artifacts?.length) dispatch(setArtifacts(data.artifacts));
 
       const cleanAnswer =
         typeof data.answer === 'string'
@@ -146,6 +144,7 @@ const ChatInput = () => {
         })
       );
     } finally {
+      setSelectedFile(null);
       dispatch(setSending(false));
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
     }
@@ -163,10 +162,31 @@ const ChatInput = () => {
 
   return (
     <div className="relative">
+      {/* Gradient fade at top */}
       <div className="absolute -top-7.5 left-0 w-full h-7.5 bg-linear-to-b from-transparent to-[#0d0d0d] pointer-events-none" />
 
       <div className="px-4 pb-6 pt-3 bg-[#0d0d0d]">
         <div className="max-w-3xl mx-auto">
+          {/* File preview pill */}
+          {selectedFile && (
+            <div className="mb-2 flex justify-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-neutral-300 text-[13px] max-w-full">
+                <Paperclip size={14} className="text-neutral-400 shrink-0" />
+                <span className="truncate">{selectedFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    if (fileRef.current) fileRef.current.value = '';
+                  }}
+                  className="ml-1 p-0.5 rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition shrink-0"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          )}
+
           <div
             className={`flex flex-col gap-2.5 rounded-2xl px-4 pt-3 pb-2.5 bg-[#111111] border border-white/6 transition-all duration-200
               ${
@@ -198,9 +218,21 @@ const ChatInput = () => {
 
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+                <input
+                  type="file"
+                  accept=".pdf, image/*"
+                  hidden
+                  ref={fileRef}
+                  onChange={(e) => {
+                    const file = e?.target?.files?.[0];
+                    if (file) setSelectedFile(file);
+                  }}
+                />
+
                 <button
                   type="button"
                   className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-white/5 transition"
+                  onClick={() => fileRef?.current?.click()}
                 >
                   <Paperclip size={16} />
                 </button>

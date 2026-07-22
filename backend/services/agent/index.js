@@ -2,7 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import connectDB from './config/db.js';
 import router from './routes/agent.route.js';
-
+import nodeFetch from 'node-fetch';
+global.fetch = nodeFetch;
 const app = express();
 const PORT = process.env.PORT || 8003;
 

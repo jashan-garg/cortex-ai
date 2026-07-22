@@ -6,7 +6,7 @@ const groq = new ChatGroq({
   model: 'openai/gpt-oss-120b',
 });
 
-const gemini = new ChatGoogle('gemini-2.5-flash');
+const gemini = new ChatGoogle('gemini-flash-latest');
 
 const openrouter = new ChatOpenRouter({
   model: 'deepseek/deepseek-chat',
