@@ -103,7 +103,6 @@ export default function BillingDrawer({ open, onClose }) {
               throw new Error(result?.message || 'Verification failed');
             }
 
-            // Update Redux instead of reloading
             dispatch(
               setUserdata({
                 ...user,
@@ -154,10 +153,10 @@ export default function BillingDrawer({ open, onClose }) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="fixed right-0 top-0 z-101 h-screen w-100 bg-[#0d0d0d] border-l border-white/10 shadow-2xl flex flex-col font-sans"
+            className="fixed right-0 top-0 z-101 h-screen w-full max-w-md bg-[#0d0d0d] border-l border-white/10 shadow-2xl flex flex-col font-sans"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+            <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-white/10">
               <h2 className="text-[15px] font-medium text-[#ececec]">
                 {currentPlan === 'pro' ? 'Your Plan' : 'Upgrade your plan'}
               </h2>
@@ -170,7 +169,7 @@ export default function BillingDrawer({ open, onClose }) {
             </div>
 
             {/* Current plan / credits */}
-            <div className="px-5 pt-4">
+            <div className="px-4 sm:px-5 pt-4">
               <div className="rounded-xl bg-[#171717] border border-white/10 p-4">
                 <div className="flex justify-between items-center">
                   <div>
@@ -196,7 +195,7 @@ export default function BillingDrawer({ open, onClose }) {
             </div>
 
             {/* Plans */}
-            <div className="px-5 pt-4 flex-1 overflow-auto space-y-3 pb-4">
+            <div className="px-4 sm:px-5 pt-4 flex-1 overflow-auto space-y-3 pb-4">
               {currentPlan === 'pro' ? (
                 <div className="rounded-xl border border-white/10 bg-[#131313] p-6 text-center">
                   <h3 className="text-[15px] font-medium text-[#ececec]">
@@ -275,7 +274,7 @@ export default function BillingDrawer({ open, onClose }) {
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-white/10">
+            <div className="px-4 sm:px-5 py-4 border-t border-white/10">
               <p className="text-[11.5px] text-[#8e8ea0]">
                 Credits are used for image, PDF, PPT and AI generation.
               </p>

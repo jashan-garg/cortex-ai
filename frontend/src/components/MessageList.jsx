@@ -10,7 +10,11 @@ const MessageList = () => {
   const { messages, isSending } = useSelector((state) => state.message);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 scrollbar-none [&::-webkit-scrollbar]:hidden bg-[#0d0d0d]">
+    <div
+      className={`flex-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden bg-[#0d0d0d]
+        px-4 sm:px-6 pb-4 sm:pb-6
+        ${selectedConversation ? 'pt-14 sm:pt-16' : 'pt-4 sm:pt-6'}`}
+    >
       {messages.length == 0 || !selectedConversation ? (
         <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 mb-1">
@@ -24,7 +28,7 @@ const MessageList = () => {
             <p className="text-[15px] font-semibold text-slate-400 tracking-tight">
               How can I help you?
             </p>
-            <p className="text-[13px] text-slate-600 max-w-65 leading-relaxed">
+            <p className="text-[13px] text-slate-600 max-w-xs sm:max-w-sm leading-relaxed mx-auto">
               Ask me anything - code, ideas, explanations, or just a quick
               question.
             </p>

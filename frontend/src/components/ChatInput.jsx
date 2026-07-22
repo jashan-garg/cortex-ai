@@ -217,7 +217,7 @@ const ChatInput = () => {
             />
 
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+              <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none">
                 <input
                   type="file"
                   accept=".pdf, image/*"
@@ -237,7 +237,7 @@ const ChatInput = () => {
                   <Paperclip size={16} />
                 </button>
 
-                <div className="w-px h-5 bg-white/8 mx-1" />
+                <div className="w-px h-5 bg-white/8 mx-0.5 sm:mx-1" />
 
                 {agents.map((agent) => {
                   const isActive = selectedAgent === agent.label;
@@ -249,20 +249,23 @@ const ChatInput = () => {
                       type="button"
                       disabled={isSending}
                       onClick={() => setSelectedAgent(agent.label)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12px] transition disabled:opacity-40 ${
+                      title={agent.label} // show full label on hover (mobile)
+                      className={`flex items-center gap-1 sm:gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-full text-[12px] transition disabled:opacity-40 ${
                         isActive
                           ? 'bg-white/10 text-white'
                           : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
                       }`}
                     >
-                      <Icon size={13} />
-                      {agent.label}
+                      <Icon size={13} className="shrink-0" />
+                      <span className="hidden sm:inline whitespace-nowrap">
+                        {agent.label}
+                      </span>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 <button
                   type="button"
                   className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-white/5 transition"

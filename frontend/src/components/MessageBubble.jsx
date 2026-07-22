@@ -33,12 +33,12 @@ const ImageGrid = ({ images, isUser, onSelect }) => {
       <div className={`mb-2 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
         <button
           onClick={() => onSelect(urls[0])}
-          className="rounded-2xl overflow-hidden max-w-70 sm:max-w-xs"
+          className="rounded-2xl overflow-hidden max-w-[80%] sm:max-w-xs"
         >
           <img
             src={urls[0]}
             alt="attachment"
-            className="w-full max-h-80 object-cover"
+            className="w-full max-h-64 sm:max-h-80 object-cover"
           />
         </button>
       </div>
@@ -53,7 +53,7 @@ const ImageGrid = ({ images, isUser, onSelect }) => {
         <button
           key={i}
           onClick={() => onSelect(url)}
-          className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shrink-0"
+          className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shrink-0"
         >
           <img src={url} className="w-full h-full object-cover" />
         </button>
@@ -68,11 +68,11 @@ const Lightbox = ({ src, onClose }) => {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-6"
+      className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 sm:p-6"
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
+        className="absolute top-3 right-3 sm:top-4 sm:right-4 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
       >
         <X size={18} />
       </button>
@@ -106,7 +106,7 @@ const ArtifactChips = ({ artifacts, isUser }) => {
           <button
             key={artifact.id}
             onClick={() => dispatch(openArtifactPanel([artifact]))}
-            className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 max-w-70 sm:max-w-xs"
+            className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 max-w-[85%] sm:max-w-xs"
           >
             <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-zinc-800 border border-zinc-700">
               <Icon size={15} className="text-zinc-300" />
@@ -162,11 +162,11 @@ const MessageBubble = ({ role, content, images, artifacts }) => {
   const hasContent = Boolean(content?.trim());
 
   return (
-    <div className="w-full py-3">
+    <div className="w-full py-2 sm:py-3">
       <div
-        className={`max-w-3xl mx-auto px-3 md:px-4 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
+        className={`max-w-3xl mx-auto px-3 sm:px-4 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
       >
-        <div className={`${isUser ? 'max-w-[75%]' : 'w-full'}`}>
+        <div className={`${isUser ? 'max-w-[85%] sm:max-w-[75%]' : 'w-full'}`}>
           <ImageGrid
             images={images}
             isUser={isUser}
@@ -180,7 +180,7 @@ const MessageBubble = ({ role, content, images, artifacts }) => {
               ref={contentRef}
               className={`overflow-hidden wrap-break-word text-[15px] leading-7 ${
                 isUser
-                  ? 'bg-white/10 text-slate-100 rounded-3xl px-4 py-2.5 whitespace-pre-wrap'
+                  ? 'bg-white/10 text-slate-100 rounded-3xl px-3 py-2 sm:px-4 sm:py-2.5 whitespace-pre-wrap'
                   : 'text-slate-100 [&_p]:mb-3 [&_p:last-child]:mb-0'
               }`}
               style={{
@@ -196,7 +196,9 @@ const MessageBubble = ({ role, content, images, artifacts }) => {
                 remarkPlugins={[remarkGfm]}
                 components={{
                   pre({ children }) {
-                    return <div className="my-4">{children}</div>;
+                    return (
+                      <div className="my-4 overflow-x-auto">{children}</div>
+                    );
                   },
 
                   code({ node, className, children }) {
@@ -219,14 +221,14 @@ const MessageBubble = ({ role, content, images, artifacts }) => {
 
                     return (
                       <div className="rounded-xl overflow-hidden border border-white/10 bg-[#111318]">
-                        <div className="flex justify-between items-center px-4 py-2 bg-[#1b1d24] border-b border-white/10">
+                        <div className="flex justify-between items-center px-3 sm:px-4 py-2 bg-[#1b1d24] border-b border-white/10">
                           <span className="text-xs text-slate-400 uppercase">
                             {language}
                           </span>
 
                           <button
                             onClick={() => handleCodeCopy(code)}
-                            className="flex items-center gap-1 text-xs"
+                            className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors"
                           >
                             {copiedCode === code ? (
                               <>
@@ -247,9 +249,17 @@ const MessageBubble = ({ role, content, images, artifacts }) => {
                           showLineNumbers
                           customStyle={{
                             margin: 0,
-                            padding: '16px',
+                            padding: '12px 8px',
+                            paddingLeft: '3rem',
                             background: '#0d1117',
                             fontSize: '13px',
+                            overflowX: 'auto',
+                          }}
+                          codeTagProps={{
+                            style: {
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                            },
                           }}
                         >
                           {code}
@@ -267,7 +277,7 @@ const MessageBubble = ({ role, content, images, artifacts }) => {
           {isOverflowing && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="mt-1.5 text-xs text-slate-400 flex items-center gap-1"
+              className="mt-1.5 text-xs text-slate-400 flex items-center gap-1 hover:text-slate-200 transition-colors"
             >
               {expanded ? (
                 <>
@@ -285,7 +295,7 @@ const MessageBubble = ({ role, content, images, artifacts }) => {
         {hasContent && (
           <button
             onClick={handleMessageCopy}
-            className="mt-1.5 w-7 h-7 flex items-center justify-center text-slate-500 hover:text-slate-200"
+            className="mt-1.5 w-7 h-7 flex items-center justify-center text-slate-500 hover:text-slate-200 transition-colors"
           >
             {copiedMessage ? <Check size={14} /> : <Copy size={14} />}
           </button>

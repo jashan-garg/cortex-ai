@@ -104,19 +104,25 @@ const PdfViewer = ({
     <div className="flex flex-col h-full bg-zinc-950">
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto flex flex-col items-center gap-4 p-4"
+        className="flex-1 overflow-auto scrollbar-none [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 sm:gap-4 p-2 sm:p-4"
       >
         {error ? (
-          <div className="text-zinc-400 text-sm self-center">{error}</div>
+          <div className="text-zinc-400 text-xs sm:text-sm self-center py-5 sm:py-10">
+            {error}
+          </div>
         ) : loadingPdf || !pdfUrl ? (
-          <div className="text-zinc-400 text-sm py-10">{loadingText}</div>
+          <div className="text-zinc-400 text-xs sm:text-sm py-5 sm:py-10">
+            {loadingText}
+          </div>
         ) : (
           <Document
             file={pdfUrl}
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={onDocumentLoadError}
             loading={
-              <div className="text-zinc-400 text-sm py-10">{loadingText}</div>
+              <div className="text-zinc-400 text-xs sm:text-sm py-5 sm:py-10">
+                {loadingText}
+              </div>
             }
           >
             {containerWidth > 0 &&
@@ -147,8 +153,8 @@ const PdfViewer = ({
       </div>
 
       {numPages > 1 && (
-        <div className="h-10 border-t border-zinc-800 flex items-center justify-center shrink-0">
-          <span className="text-[12px] text-zinc-400 tabular-nums">
+        <div className="h-8 sm:h-10 border-t border-zinc-800 flex items-center justify-center shrink-0">
+          <span className="text-[10px] sm:text-[12px] text-zinc-400 tabular-nums">
             Page {currentPage} of {numPages}
           </span>
         </div>
