@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "clear && nodemon index.js"
+    "dev": "clear && nodemon index.js",
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",

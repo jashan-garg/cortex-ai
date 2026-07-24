@@ -7,9 +7,12 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "clear; nodemon index.js"
+    "dev": "clear; nodemon index.js",
+    "start": "node index.js"
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.0",
+    "dotenv": "^17.4.2",
     "ioredis": "^5.11.1"
   }
 }
