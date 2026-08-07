@@ -1,0 +1,103 @@
+name: Cortex AI deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: eu-north-1
+  ECS_CLUSTER: backend
+  GATEWAY_SERVICE: gateway-service
+  AUTH_SERVICE: auth-service
+  CHAT_SERVICE: chat-service
+  AGENT_SERVICE: agent-service
+  BILLING_SERVICE: billing-service
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend images
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -f backend/gateway/Dockerfile -t "$ECR_REGISTRY/gateway:latest" backend
+          docker push "$ECR_REGISTRY/gateway:latest"
+
+          docker build -f backend/services/auth/Dockerfile -t "$ECR_REGISTRY/auth-service:latest" backend
+          docker push "$ECR_REGISTRY/auth-service:latest"
+
+          docker build -f backend/services/chat/Dockerfile -t "$ECR_REGISTRY/chat-service:latest" backend
+          docker push "$ECR_REGISTRY/chat-service:latest"
+
+          docker build -f backend/services/agent/Dockerfile -t "$ECR_REGISTRY/agent-service:latest" backend
+          docker push "$ECR_REGISTRY/agent-service:latest"
+
+          docker build -f backend/services/billing/Dockerfile -t "$ECR_REGISTRY/billing-service:latest" backend
+          docker push "$ECR_REGISTRY/billing-service:latest"
+
+      - name: Redeploy ECS services
+        run: |
+          for service in \
+            "$GATEWAY_SERVICE" \
+            "$AUTH_SERVICE" \
+            "$CHAT_SERVICE" \
+            "$AGENT_SERVICE" \
+            "$BILLING_SERVICE"
+          do
+            aws ecs update-service \
+              --cluster "$ECS_CLUSTER" \
+              --service "$service" \
+              --force-new-deployment
+          done
+
+  deploy-frontend:
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
+          VITE_RAZORPAY_KEY_ID: ${{ secrets.VITE_RAZORPAY_KEY_ID }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload frontend to S3
+        run: aws s3 sync frontend/dist "s3://${{ secrets.FRONTEND_S3_BUCKET }}" --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"
