@@ -43,6 +43,11 @@ const SideBar = () => {
 
   useEffect(() => {
     const getConv = async () => {
+      if (!user?._id) {
+        dispatch(setConversations([]));
+        return;
+      }
+
       try {
         const data = await getConversations();
         dispatch(setConversations(data));
