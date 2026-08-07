@@ -36,6 +36,13 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Restore Firebase service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_KEY" \
+            > backend/services/auth/serviceAccountKey.json
+
       - name: Build and push backend images
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
