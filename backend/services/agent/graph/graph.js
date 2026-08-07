@@ -58,7 +58,7 @@ workflow.addConditionalEdges(
     imageAnalyzer: 'imageAnalyzer',
   }
 );
-workflow.addEdge('search', 'chat');
+workflow.addEdge('search', '__end__');
 workflow.addEdge('chat', '__end__');
 workflow.addEdge('coding', '__end__');
 workflow.addEdge('vision', '__end__');

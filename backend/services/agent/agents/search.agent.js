@@ -8,10 +8,40 @@ export const searchAgent = async (state) => {
     const results = await searchTool.invoke({
       query: state.prompt,
     });
-    console.log(results);
-    await deductCredits(state.userId, 'search');
-    return { ...state, searchResults: results, images: results.images };
+    const sources = Array.isArray(results?.results) ? results.results : [];
+
+    if (!results?.answer && sources.length === 0) {
+      throw new Error(results?.error || 'No search results found.');
+    }
+
+    const sourceList = sources
+      .slice(0, 5)
+      .map(
+        (source, index) =>
+          `${index + 1}. [${source.title || source.url}](${source.url})`
+      )
+      .join('\n');
+    const answer = [
+      results?.answer || sources[0]?.content || 'No answer found.',
+      sourceList ? `## Sources\n\n${sourceList}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+    const deductRes = await deductCredits(state.userId, 'search');
+
+    return {
+      ...state,
+      aiResponse: answer,
+      searchResults: results,
+      images: results?.images || [],
+      credits: deductRes?.credits,
+    };
   } catch (error) {
-    return { ...state, searchResults: [], images: [] };
+    return {
+      ...state,
+      aiResponse: error.message || 'Search failed. Please try again.',
+      searchResults: [],
+      images: [],
+    };
   }
 };

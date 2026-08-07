@@ -65,15 +65,15 @@ export const codingAgent = async (state) => {
         "files":[
           {
             "name": "index.html",
-            "content": "...",
+            "content": "..."
           },
           {
             "name": "style.css",
-            "content": "...",
+            "content": "..."
           },
           {
             "name": "script.js",
-            "content": "...",
+            "content": "..."
           }
         ]
       }
