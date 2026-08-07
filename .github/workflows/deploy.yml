@@ -36,6 +36,14 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set up ARM64 emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Restore Firebase service account
         env:
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
@@ -47,20 +55,25 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build -f backend/gateway/Dockerfile -t "$ECR_REGISTRY/gateway:latest" backend
-          docker push "$ECR_REGISTRY/gateway:latest"
+          docker buildx build --platform linux/arm64 --push \
+            -f backend/gateway/Dockerfile \
+            -t "$ECR_REGISTRY/gateway:latest" backend
 
-          docker build -f backend/services/auth/Dockerfile -t "$ECR_REGISTRY/auth-service:latest" backend
-          docker push "$ECR_REGISTRY/auth-service:latest"
+          docker buildx build --platform linux/arm64 --push \
+            -f backend/services/auth/Dockerfile \
+            -t "$ECR_REGISTRY/auth-service:latest" backend
 
-          docker build -f backend/services/chat/Dockerfile -t "$ECR_REGISTRY/chat-service:latest" backend
-          docker push "$ECR_REGISTRY/chat-service:latest"
+          docker buildx build --platform linux/arm64 --push \
+            -f backend/services/chat/Dockerfile \
+            -t "$ECR_REGISTRY/chat-service:latest" backend
 
-          docker build -f backend/services/agent/Dockerfile -t "$ECR_REGISTRY/agent-service:latest" backend
-          docker push "$ECR_REGISTRY/agent-service:latest"
+          docker buildx build --platform linux/arm64 --push \
+            -f backend/services/agent/Dockerfile \
+            -t "$ECR_REGISTRY/agent-service:latest" backend
 
-          docker build -f backend/services/billing/Dockerfile -t "$ECR_REGISTRY/billing-service:latest" backend
-          docker push "$ECR_REGISTRY/billing-service:latest"
+          docker buildx build --platform linux/arm64 --push \
+            -f backend/services/billing/Dockerfile \
+            -t "$ECR_REGISTRY/billing-service:latest" backend
 
       - name: Redeploy ECS services
         run: |
