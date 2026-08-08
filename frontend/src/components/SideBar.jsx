@@ -30,6 +30,7 @@ const SideBar = () => {
     (state) => state.conversation
   );
   const { user } = useSelector((state) => state.user);
+  const authenticatedUserId = user?._id || user?.userId;
   const [imageError, setImageError] = useState(false);
   const [showBilling, setShowBilling] = useState(false);
 
@@ -43,7 +44,7 @@ const SideBar = () => {
 
   useEffect(() => {
     const getConv = async () => {
-      if (!user?._id) {
+      if (!authenticatedUserId) {
         dispatch(setConversations([]));
         return;
       }
@@ -56,7 +57,7 @@ const SideBar = () => {
       }
     };
     getConv();
-  }, [user?._id]);
+  }, [authenticatedUserId]);
 
   // Common close handler for mobile
   const closeMobileSidebar = () => setMobileOpen(false);
