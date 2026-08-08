@@ -29,7 +29,10 @@ env:
 
 jobs:
   deploy-backend:
-    if: github.event_name == 'push' || inputs.repair_frontend != true
+    if: >-
+      (github.event_name == 'push' &&
+      !contains(github.event.head_commit.message, '[repair-frontend]')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.repair_frontend != true)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -184,7 +187,10 @@ jobs:
           exit 1
 
   repair-frontend:
-    if: github.event_name == 'workflow_dispatch' && inputs.repair_frontend == true
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.repair_frontend == true) ||
+      (github.event_name == 'push' &&
+      contains(github.event.head_commit.message, '[repair-frontend]'))
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS credentials
