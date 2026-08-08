@@ -4,7 +4,15 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - .github/workflows/deploy.yml
   workflow_dispatch:
+    inputs:
+      repair_frontend:
+        description: Re-enable and verify the existing frontend CloudFront distribution
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -21,6 +29,7 @@ env:
 
 jobs:
   deploy-backend:
+    if: github.event_name == 'push' || inputs.repair_frontend != true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -113,11 +122,124 @@ jobs:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Verify and enable frontend CloudFront distribution
+        id: frontend-cloudfront
+        env:
+          DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          config_file="$(mktemp)"
+          enabled_config_file="$(mktemp)"
+
+          aws cloudfront get-distribution-config \
+            --id "$DISTRIBUTION_ID" \
+            --output json > "$config_file"
+
+          etag="$(jq -r '.ETag' "$config_file")"
+          enabled="$(jq -r '.DistributionConfig.Enabled' "$config_file")"
+
+          if [ "$enabled" != "true" ]; then
+            jq '.DistributionConfig.Enabled = true | .DistributionConfig' \
+              "$config_file" > "$enabled_config_file"
+
+            aws cloudfront update-distribution \
+              --id "$DISTRIBUTION_ID" \
+              --if-match "$etag" \
+              --distribution-config "file://$enabled_config_file"
+          fi
+
+          aws cloudfront wait distribution-deployed --id "$DISTRIBUTION_ID"
+
+          domain_name="$(aws cloudfront get-distribution \
+            --id "$DISTRIBUTION_ID" \
+            --query 'Distribution.DomainName' \
+            --output text)"
+
+          echo "distribution_id=$DISTRIBUTION_ID" >> "$GITHUB_OUTPUT"
+          echo "domain_name=$domain_name" >> "$GITHUB_OUTPUT"
+
       - name: Upload frontend to S3
         run: aws s3 sync frontend/dist "s3://${{ secrets.FRONTEND_S3_BUCKET }}" --delete
 
       - name: Invalidate CloudFront cache
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --distribution-id "${{ steps.frontend-cloudfront.outputs.distribution_id }}" \
             --paths "/*"
+
+      - name: Verify frontend is reachable
+        env:
+          DOMAIN_NAME: ${{ steps.frontend-cloudfront.outputs.domain_name }}
+        run: |
+          for attempt in $(seq 1 18); do
+            if curl --fail --silent --show-error \
+              "https://$DOMAIN_NAME/" --output /dev/null
+            then
+              echo "Frontend is live at https://$DOMAIN_NAME/"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "Frontend did not become reachable after 3 minutes."
+          exit 1
+
+  repair-frontend:
+    if: github.event_name == 'workflow_dispatch' && inputs.repair_frontend == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Re-enable frontend CloudFront distribution
+        id: repair-cloudfront
+        env:
+          DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          config_file="$(mktemp)"
+          enabled_config_file="$(mktemp)"
+
+          aws cloudfront get-distribution-config \
+            --id "$DISTRIBUTION_ID" \
+            --output json > "$config_file"
+
+          etag="$(jq -r '.ETag' "$config_file")"
+          enabled="$(jq -r '.DistributionConfig.Enabled' "$config_file")"
+
+          if [ "$enabled" != "true" ]; then
+            jq '.DistributionConfig.Enabled = true | .DistributionConfig' \
+              "$config_file" > "$enabled_config_file"
+
+            aws cloudfront update-distribution \
+              --id "$DISTRIBUTION_ID" \
+              --if-match "$etag" \
+              --distribution-config "file://$enabled_config_file"
+          fi
+
+          aws cloudfront wait distribution-deployed --id "$DISTRIBUTION_ID"
+
+          domain_name="$(aws cloudfront get-distribution \
+            --id "$DISTRIBUTION_ID" \
+            --query 'Distribution.DomainName' \
+            --output text)"
+
+          echo "domain_name=$domain_name" >> "$GITHUB_OUTPUT"
+
+      - name: Verify frontend is reachable
+        env:
+          DOMAIN_NAME: ${{ steps.repair-cloudfront.outputs.domain_name }}
+        run: |
+          for attempt in $(seq 1 18); do
+            if curl --fail --silent --show-error \
+              "https://$DOMAIN_NAME/" --output /dev/null
+            then
+              echo "Frontend is live at https://$DOMAIN_NAME/"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "Frontend did not become reachable after 3 minutes."
+          exit 1
