@@ -16,9 +16,14 @@ export const createConversation = async (req, res) => {
 export const getConversations = async (req, res) => {
   try {
     const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(401).json({ message: 'User identity is missing' });
+    }
+
     const conversations = await Conversation.find({ userId: userId }).sort({
       updatedAt: -1,
     });
+    res.set('Cache-Control', 'no-store');
     return res.status(200).json(conversations);
   } catch (error) {
     return res
@@ -62,6 +67,7 @@ export const getMessages = async (req, res) => {
     const messages = await Message.find({
       conversationId: req.params.conversationId,
     });
+    res.set('Cache-Control', 'no-store');
     return res.status(200).json(messages);
   } catch (error) {
     return res

@@ -5,6 +5,13 @@ const groq = new ChatGroq({
   model: 'openai/gpt-oss-120b',
 });
 
+const coding = new ChatGroq({
+  model: 'openai/gpt-oss-120b',
+  temperature: 0,
+  maxTokens: 4096,
+  reasoningEffort: 'low',
+});
+
 const gemini = new ChatGoogle('gemini-flash-latest');
 
 export const getModel = (agent) => {
@@ -14,7 +21,7 @@ export const getModel = (agent) => {
     case 'search':
       return groq;
     case 'coding':
-      return groq;
+      return coding;
     case 'imageAnalyzer':
       return gemini;
     default:

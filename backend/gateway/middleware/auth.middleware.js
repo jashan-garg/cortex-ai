@@ -12,6 +12,13 @@ const protect = async (req, res, next) => {
         .json({ message: `Session expired. Kindly Re-Login` });
 
     req.user = JSON.parse(session);
+    res.cookie('session', sessionId, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      partitioned: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
     next();
   } catch (error) {
     return res.status(500).json({ message: `Authentication server error.` });

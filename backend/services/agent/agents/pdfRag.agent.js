@@ -1,22 +1,23 @@
 import fs from 'fs';
 import { PDFParse } from 'pdf-parse';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
-import { vectorStore } from '../config/vectorDb.js';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { getModel } from '../config/llmModels.js';
 import { deductCredits } from '../utils/deductCredits.js';
 import { checkLimit } from '../config/agentLimit.js';
+import { embeddings } from '../config/embeddings.js';
+import { selectRelevantDocuments } from '../utils/semanticSearch.js';
 
 export const pdfRag = async (state) => {
-  let collectionName; // <-- move outside try
-  let store; // <-- move outside try
-
   try {
     await checkLimit(state.userId, 'pdf');
+    if (!state?.file?.path) throw new Error('No PDF file was uploaded');
+
     const buffer = fs.readFileSync(state?.file?.path);
     const pdf = new PDFParse({ data: buffer });
     const result = await pdf.getText();
-    const text = result.text;
+    const text = result.text?.trim();
+    if (!text) throw new Error('The uploaded PDF contains no extractable text');
 
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 1000,
@@ -24,10 +25,12 @@ export const pdfRag = async (state) => {
     });
 
     const docs = await splitter.createDocuments([text]);
-    collectionName = `pdf-${Date.now()}`;
-    store = await vectorStore(collectionName, docs); // assign to outer variable
-
-    const relevantDocs = await store.similaritySearch(state.prompt, 5);
+    const relevantDocs = await selectRelevantDocuments(
+      docs,
+      state.prompt,
+      embeddings,
+      5
+    );
     const context = relevantDocs.map((doc) => doc.pageContent).join('\n\n');
     const llm = await getModel('pdf-rag');
 
@@ -45,9 +48,18 @@ export const pdfRag = async (state) => {
     ];
 
     const response = await llm.invoke(messages);
+    let credits;
+    try {
+      const deduction = await deductCredits(state.userId, 'pdf');
+      credits = deduction?.credits;
+    } catch (error) {
+      console.error('PDF credit deduction error:', error);
+    }
+
     return {
       ...state,
       aiResponse: response.content,
+      ...(credits !== undefined ? { credits } : {}),
     };
   } catch (error) {
     console.error('PDF RAG error:', error);
@@ -56,14 +68,8 @@ export const pdfRag = async (state) => {
       aiResponse: 'Failed to analyse the file, please try again',
     };
   } finally {
-    await deductCredits(state.userId, 'pdf');
     try {
       if (state?.file?.path) fs.unlinkSync(state.file.path);
-
-      // Now store and collectionName are accessible
-      if (store && collectionName) {
-        await store.client.deleteCollection(collectionName);
-      }
     } catch (err) {
       console.log(`Cleanup error: ${err.message}`);
     }

@@ -1,21 +1,42 @@
 import { checkLimit } from '../config/agentLimit.js';
 import { getModel } from '../config/llmModels.js';
 import { deductCredits } from '../utils/deductCredits.js';
+import { parseProject } from '../utils/projectParser.js';
 
-const cleanJson = (text) => {
-  return text
-    .replace(/```json/g, '')
-    .replace(/```/g, '')
-    .trim();
+const projectSchema = {
+  type: 'object',
+  properties: {
+    files: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          content: { type: 'string' },
+        },
+        required: ['name', 'content'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['files'],
+  additionalProperties: false,
 };
 
-const safeParse = (text) => {
-  try {
-    return JSON.parse(text);
-  } catch {
-    const cleaned = cleanJson(text);
-    return JSON.parse(cleaned);
-  }
+const generateProject = async (llm, prompt, compact = false) => {
+  const structuredLlm = llm.withStructuredOutput(projectSchema, {
+    name: 'project',
+    method: 'jsonSchema',
+  });
+  const project = await structuredLlm.invoke(
+    `${prompt}${
+      compact
+        ? '\nThe previous response was invalid or truncated. Regenerate the same project more concisely and keep the complete JSON under 7,000 characters.'
+        : ''
+    }`
+  );
+
+  return parseProject(JSON.stringify(project));
 };
 
 export const codingAgent = async (state) => {
@@ -53,6 +74,7 @@ export const codingAgent = async (state) => {
       - Hover Effects
       - Beautiful spacing
       - Single page unless user asks otherwise.
+      - Keep the implementation concise so the complete JSON is returned.
 
       Return ONLY valid JSON.
 
@@ -90,8 +112,13 @@ export const codingAgent = async (state) => {
       
     User Request: ${state.prompt}`;
 
-    const res = await llm.invoke(prompt);
-    const data = safeParse(res.content);
+    let data;
+    try {
+      data = await generateProject(llm, prompt);
+    } catch (error) {
+      console.warn('Retrying compact code generation:', error.message);
+      data = await generateProject(llm, prompt, true);
+    }
     await deductCredits(state.userId, 'coding');
     return {
       ...state,
